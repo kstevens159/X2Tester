@@ -1,6 +1,6 @@
 #
 # @file		        : x2mbRegisters.py
-# Project		: S500/DL100
+# Project		: X2 Tester
 # Author		: Kevin Stevens
 # Created on	        : Jun 27, 2016
 # Version		: 1.0
