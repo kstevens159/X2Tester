@@ -3,7 +3,6 @@
 import minimalmodbus
 import datetime
 import time
-import sys
 
 def main():
 
@@ -18,19 +17,35 @@ def main():
     
     ##Setup the modbus instance of the X2
     x2 = minimalmodbus.Instrument(comPort, x2mbAddress)#Define the minimalmodbus instance mb
-    minimalmodbus.BAUDRATE= baud
-    minimalmodbus.PARITY=parity
-    minimalmodbus.BYTESIZE=bytesize
-    minimalmodbus.STOPBITS=stopbits
-    minimalmodbus.TIMEOUT=modbusTimeout
+    x2.serial.baudrate = baud
+    x2.serial.parity = parity
+    x2.serial.bytesize = bytesize
+    x2.serial.stopbits = stopbits
+    x2.serial.timeout = modbusTimeout
     minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
-##    x2.debug=True
+    x2.debug=True
 
     ##Main Code
     
     #Test read/write
     AddressChangeTest(x2,x2mbAddress)
 
+##    readResult = x2.read_registers(0x1000,1,functioncode=4)
+####    readResult = mbReadRetries(x2,0x1000,1,3)
+##    print(readResult)
+##
+##    try:
+##        writeResult = x2.write_registers(0x1000,[1])
+##    except:
+##        writeResult = x2.write_registers(0x1000,[1])
+####    writeResult = mbWriteRetries(x2,0x1000,[2],3)
+##    print(writeResult)
+##    
+##    readResult = x2.read_registers(0x1000,1,functioncode=4)
+####    readResult = mbReadRetries(x2,0x1000,1,3)
+##    print(readResult)
+
+    
 
     
 ##############################
@@ -71,13 +86,22 @@ def AddressChangeTest(x2,add):
         else:
             print("The write was not successful\n")
 
+    #Read the current address again
+    print("Reading address...")
+    readResult = mbReadRetries(x2,0x1000)
+    if(readResult):
+        print("The device's final address is",readResult[0],"\n")
+    else:
+        print("The read was not successful\n")
+
 #This function is used to gracefully handle failed reads and allow retries 
-def mbReadRetries(device,reg,numReg=1,retries=5):
+def mbReadRetries(device,reg,numReg=1,retries=3):
     for i in range (0,retries):
         try:
             result=device.read_registers(reg,numReg,functioncode=4)
             break #if it gets past the read without causing an exception exit the loop as the read was successful
         except:
+            device.serial.flushInput()
             time.sleep(1)
             pass #Continue running the code without exiting the program if the read was not successful
     else: #If it exits normally that means it failed every time
@@ -85,13 +109,14 @@ def mbReadRetries(device,reg,numReg=1,retries=5):
     return result
 
 #This function is used to gracefully handle failed writes and allow retries 
-def mbWriteRetries(device,reg,value,retries=5):
+def mbWriteRetries(device,reg,value,retries=3):
     for i in range (0,retries):
         try:
             result=device.write_registers(reg,value)
             break #if it gets past the read without causing an exception exit the loop as the read was successful
         except:
-            time.sleep(1)
+            device.serial.flushInput()
+            time.sleep(0.5)
             pass #Continue running the code without exiting the program if the read was not successful
     else: #If it exits normally that means it failed every time
         return False
