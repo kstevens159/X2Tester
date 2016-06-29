@@ -42,9 +42,9 @@ def main():
     
     #Device Parameters
     snlen = 4 #length of the serial number
-    mbRetries = 3
+    mbRetries = 3 #Number of retries on modbus commands
     #USB RS-485 Parameters
-    x2mbAddress = 252
+    x2mbAddress = 252 #X2 Main universal address
     baud = 19200
     parity = 'N'
     bytesize=8
@@ -61,7 +61,7 @@ def main():
     spi.open(0,0)
 
     #Setup the modbus instance of the X2
-    x2 = minimalmodbus.Instrument(comPort, x2mbAddress)#Define the minimalmodbus instance mb
+    x2 = minimalmodbus.Instrument(comPort, x2mbAddress)#Define the minimalmodbus instance
     x2.serial.baudrate = baud
     x2.serial.parity = parity
     x2.serial.bytesize = bytesize
@@ -97,19 +97,60 @@ def main():
     date = datetime.datetime.now().strftime("%Y.%m.%d")
     relativePath = "/TestResults/"
     filename = os.path.dirname(__file__)+relativePath+date+"_"+name
+
     #Open the file
     if(os.path.isfile(filename)):   #If the file exists append it
         out_records=open(filename, 'a')
     else:                           #If the file doesn't exist create it and add section headers
         out_records=open(filename, 'w')
         out_records.write("Serial Number,"
-                          "3V LDO Status,3V LDO Voltage,"
+                          "3V LDO Status,"
+                          "3V LDO Voltage,"
                           "Processor & Host RS-485 Status,"
-                          "RTU Battery Status, RTU Battery Voltage,"
-                          "3.3V SEPIC Status, 3.3V SEPIC Voltage,"
+                          "RTU Battery Status,"
+                          "RTU Battery Voltage,"
+                          "3.3V SEPIC Status,"
+                          "3.3V SEPIC Voltage,"
                           "EE Status,"
                           "Serial Flash Status,"
-                          "SD Card Status\n")
+                          "SD Card Status,"
+                          "Primary Power Switch Status,"
+                          "System Current Status,"
+                          "System Current Value,"
+                          "12V SEPIC Status,"
+                          "5V LDO Status,"
+                          "5V LDO Voltage,"
+                          "12V Sensor Power Switch A Status,"
+                          "12V Sensor Power Switch A Voltage,"
+                          "12V Sensor Power Switch B Status,"
+                          "12V Sensor Power Switch B Voltage,"
+                          "12V Sensor Power Switch C Status,"
+                          "12V Sensor Power Switch C Voltage,"
+                          "12V Sensor Power Switch D Status,"
+                          "12V Sensor Power Switch D Voltage,"
+                          "12V Sensor Current Status,"
+                          "12V Sensor Current Value,"
+                          "Priority Power Output 1 Status,"
+                          "Priority Power Output 1 Voltage,"
+                          "Priority Power Output 2 Status,"
+                          "Priority Power Output 2 Voltage,"
+                          "Wi-Fi Network Status,"
+                          "Wi-Fi Communication Status,"
+                          "RS-485 Sensor A,"
+                          "RS-485 Sensor B,"
+                          "RS-485 Sensor C,"
+                          "RS-232 Sensor A,"
+                          "RS-232 Sensor B,"
+                          "RS-232 Sensor C,"
+                          "SDI-12 Sensor A,"
+                          "SDI-12 Sensor B,"
+                          "SDI-12 Sensor C,"
+                          "Magnetic Switch Status,"
+                          "Pressure/Temp/Humidity Chip Status,"
+                          "Passthrough RS-485 Status,"
+                          "Trigger 1 Status,"
+                          "Trigger 2 Status,"
+                          "\n")
 
 
     ###################
@@ -124,7 +165,7 @@ def main():
         #Test the 3V LDO
         print("\n------------------------------")
         print("Testing the 3V LDO...")
-        result=test3VLDO(spi) #Call the 3V LDO test module
+        result=test3VLDO(GPIO,pin,spi) #Call the 3V LDO test module
         print("Test result:",result)
         out_records.write(",%s,%s" % (result[0],result[1])) #Write the result to the file
         print("------------------------------\n")
@@ -132,7 +173,7 @@ def main():
         #Test the RS-485 driver and processor
         print("\n------------------------------")
         print("Testing the Processor & RS-485 Modbus Communication...")
-        result=testProcAndRS485(x2,mbRetries) #Call the Processor and RS-485 test module
+        result=testProcAndRS485(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
         print("Test result:",result)
         out_records.write(",%s" % (result[0])) #Write the result to the file
         print("------------------------------\n")
@@ -146,9 +187,16 @@ def main():
 ##        print("------------------------------\n")
 
 
+        #Turn off the board
+        GPIO.output(pin["IO1"],GPIO.LOW)
 
+        input("The current board has finished testing and is safe to remove.\n"
+              "Press Enter to continue")
+
+        #Prepare for next board
         out_records.write("\n")#Line return to go to next record
-        sn = getSN(snlen)
+        out_records.flush()
+        sn = getSN(snlen) #Get new board SN
 
     #close the file
     out_records.close
@@ -205,10 +253,10 @@ def mbWriteRetries(device,reg,value,retries=5):
 
 #Used to check the current status of the PCB's power and enable
 #power if it is off
-def power0on():
-    #if(IO1==OFF):
-        #IO1 = ON
-        #time.sleep(1)
+def power0on(GPIO,pin):
+    if(GPIO.input(pin["IO1"])== 0):
+        GPIO.output(pin["IO1"],GPIO.HIGH)
+        time.sleep(1)
     return True
 
 #Reads the analog voltage on a MCP3008 channel
@@ -226,8 +274,8 @@ def readAnalog(spi,ch,scale=1): #ch must be 0-7
 
 
 #Tests the 3V LDO is functioning correctly
-def test3VLDO(spi):
-    power0on()
+def test3VLDO(GPIO,pin,spi):
+    power0on(GPIO,pin)
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -244,8 +292,8 @@ def test3VLDO(spi):
         return ["Fail-Voltage low",analog0]
 
 #Test that the RS-485 and processor are functioning correctly
-def testProcAndRS485(x2,mbRetries):
-    power0on()
+def testProcAndRS485(GPIO,pin,x2,mbRetries):
+    power0on(GPIO,pin)
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -302,8 +350,10 @@ if __name__ == "__main__":
         GPIO.cleanup()
     except KeyboardInterrupt:
         print("User cancelled with Keyboard")
+        GPIO.output(pin["IO1"],GPIO.LOW)
         GPIO.cleanup()
     except Exception:
         print("An error occured")
+        GPIO.output(pin["IO1"],GPIO.LOW)
         GPIO.cleanup()
         
