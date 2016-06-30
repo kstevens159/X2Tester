@@ -1,17 +1,21 @@
 from wifi import Cell
 import time
 
+searchString="Zy"
+
 for i in range(0,5):
     ssids=[cell.ssid for cell in Cell.all('wlan0')]
     print(ssids)
     for ssid in ssids:
-        if ("Zy" in ssid):
+        if (searchString in ssid):
             done=True
             print("Successfully found network:",ssid)
             break
         else:
             done=False
-            print("NO")
     if(done):
         break
-    time.sleep(1)
+    else:
+        print("Failed to find a network with", searchString, "in it on attempt", i+1)
+        print("Waiting and retrying")
+        time.sleep(10)
