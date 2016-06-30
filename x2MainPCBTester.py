@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #
 # @file		        : x2MainPCBTester.py
 # Project		: X2 Tester
@@ -91,7 +93,9 @@ def main():
     ########################
     ## Create Output File ##
     ########################
-    
+
+    #Check if folder is there and if not make
+    os.makedirs("TestResults",exist_ok=True)
     #Define the file name to be .../TestResults/<CURRENT_DATE>_PCBTestResults.csv
     name = "PCBTestResults.txt"
     date = datetime.datetime.now().strftime("%Y.%m.%d")
@@ -99,6 +103,7 @@ def main():
     filename = os.path.dirname(__file__)+relativePath+date+"_"+name
 
     #Open the file
+    
     if(os.path.isfile(filename)):   #If the file exists append it
         out_records=open(filename, 'a')
     else:                           #If the file doesn't exist create it and add section headers
@@ -352,8 +357,8 @@ if __name__ == "__main__":
         print("User cancelled with Keyboard")
         GPIO.output(pin["IO1"],GPIO.LOW)
         GPIO.cleanup()
-    except Exception:
-        print("An error occured")
-        GPIO.output(pin["IO1"],GPIO.LOW)
-        GPIO.cleanup()
+##    except Exception:
+##        print("An error occured")
+##        GPIO.output(pin["IO1"],GPIO.LOW)
+##        GPIO.cleanup()
         
