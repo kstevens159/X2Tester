@@ -23,7 +23,7 @@ def main():
     x2.serial.stopbits = stopbits
     x2.serial.timeout = modbusTimeout
     minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
-    x2.debug=True
+##    x2.debug=True
 
     ##Main Code
     
@@ -98,6 +98,7 @@ def AddressChangeTest(x2,add):
 def mbReadRetries(device,reg,numReg=1,retries=3):
     for i in range (0,retries):
         try:
+            device.serial.flushInput()
             result=device.read_registers(reg,numReg,functioncode=4)
             break #if it gets past the read without causing an exception exit the loop as the read was successful
         except:
@@ -112,6 +113,7 @@ def mbReadRetries(device,reg,numReg=1,retries=3):
 def mbWriteRetries(device,reg,value,retries=3):
     for i in range (0,retries):
         try:
+            device.serial.flushInput()
             result=device.write_registers(reg,value)
             break #if it gets past the read without causing an exception exit the loop as the read was successful
         except:
@@ -119,7 +121,7 @@ def mbWriteRetries(device,reg,value,retries=3):
             time.sleep(0.5)
             pass #Continue running the code without exiting the program if the read was not successful
     else: #If it exits normally that means it failed every time
-        return False
+        return ['False']
     return value
             
 

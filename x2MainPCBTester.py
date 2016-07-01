@@ -35,6 +35,13 @@ import spidev
 import x2mbRegisters as Reg
 import minimalmodbus
 import RPi.GPIO as GPIO
+from wifi import Cell
+
+##import sys
+##print(sys.path, "\n")
+##sys.path.insert(0,"/usr/bin")
+##print(sys.path, "\n")
+##print("Minimal Modbus location",minimalmodbus.__file__)
 
 def main():
 
@@ -45,6 +52,9 @@ def main():
     #Device Parameters
     snlen = 4 #length of the serial number
     mbRetries = 3 #Number of retries on modbus commands
+    wifiRetries = 25
+##    wifiNetwork = "X2 Logger"
+    wifiNetwork = "ZyXEL"
     #USB RS-485 Parameters
     x2mbAddress = 252 #X2 Main universal address
     baud = 19200
@@ -99,8 +109,9 @@ def main():
     #Define the file name to be .../TestResults/<CURRENT_DATE>_PCBTestResults.csv
     name = "PCBTestResults.txt"
     date = datetime.datetime.now().strftime("%Y.%m.%d")
-    relativePath = "/TestResults/"
-    filename = os.path.dirname(__file__)+relativePath+date+"_"+name
+##    relativePath = "/TestResults/"
+##    filename = os.path.dirname(__file__)+relativePath+date+"_"+name
+    filename="/home/pi/Documents/"+date+"_"+name
 
     #Open the file
     
@@ -112,6 +123,8 @@ def main():
                           "3V LDO Status,"
                           "3V LDO Voltage,"
                           "Processor & Host RS-485 Status,"
+                          "Wi-Fi Network Status,"
+                          "Wi-Fi Communication Status,"                          
                           "RTU Battery Status,"
                           "RTU Battery Voltage,"
                           "3.3V SEPIC Status,"
@@ -139,8 +152,6 @@ def main():
                           "Priority Power Output 1 Voltage,"
                           "Priority Power Output 2 Status,"
                           "Priority Power Output 2 Voltage,"
-                          "Wi-Fi Network Status,"
-                          "Wi-Fi Communication Status,"
                           "RS-485 Sensor A,"
                           "RS-485 Sensor B,"
                           "RS-485 Sensor C,"
@@ -183,13 +194,13 @@ def main():
         out_records.write(",%s" % (result[0])) #Write the result to the file
         print("------------------------------\n")
 
-##        #Test the RS-485 driver and processor
-##        print("\n------------------------------")
-##        print("Testing the Processor & RS-485 Modbus Communication...")
-##        result=testProcAndRS485(x2,mbRetries) #Call the Processor and RS-485 test module
-##        print("Test result:",result)
-##        out_records.write(",%s" % (result[0])) #Write the result to the file
-##        print("------------------------------\n")
+        #Test the Wi-Fi module
+        print("\n------------------------------")
+        print("Testing the Wi-Fi Module...")
+        result=testWifi(x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
+        print("Test result:",result)
+        out_records.write(",%s" % (result[0])) #Write the result to the file
+        print("------------------------------\n")
 
 
         #Turn off the board
@@ -229,13 +240,12 @@ def getSN(snlen):
 
 #This function is used to gracefully handle failed reads and allow retries 
 def mbReadRetries(device,reg,numReg=1,retries=5):
-    device.serial.flushInput() #clear serial buffer before starting
     for i in range (0,retries):
         try:
+            device.serial.flushInput() #clear serial buffer before reading
             result=device.read_registers(reg,numReg,functioncode=4)
             break #if it gets past the read without causing an exception exit the loop as the read was successful
         except:
-            device.serial.flushInput()#Needed to clear the buffer before retrying. Otherwise the results are corrupted
             print("Reading",i,"Failed")
             pass #Continue running the code without exiting the program if the read was not successful
     else: #If it exits normally that means it failed every time
@@ -244,13 +254,12 @@ def mbReadRetries(device,reg,numReg=1,retries=5):
 
 #This function is used to gracefully handle failed writes and allow retries 
 def mbWriteRetries(device,reg,value,retries=5):
-    device.serial.flushInput() #clear serial buffer before starting
     for i in range (0,retries):
         try:
+            device.serial.flushInput() #clear serial buffer before writing
             result=device.write_registers(reg,value)
             break #if it gets past the read without causing an exception exit the loop as the read was successful
         except:
-            device.serial.flushInput() #Needed to clear the buffer before retrying. Otherwise the results are corrupted
             pass #Continue running the code without exiting the program if the read was not successful
     else: #If it exits normally that means it failed every time
         return False
@@ -261,7 +270,9 @@ def mbWriteRetries(device,reg,value,retries=5):
 def power0on(GPIO,pin):
     if(GPIO.input(pin["IO1"])== 0):
         GPIO.output(pin["IO1"],GPIO.HIGH)
-        time.sleep(1)
+        #The sleep time of 1 works in IDLE, but not in the cmd line
+        #Not sure reason, but possible execution speed is faster in cmd line
+        time.sleep(2)
     return True
 
 #Reads the analog voltage on a MCP3008 channel
@@ -340,7 +351,34 @@ def testProcAndRS485(GPIO,pin,x2,mbRetries):
         else:
             print("The write was not successful\n")
             return ["Fail"]
-    
+
+#Test the Wi-Fi modules is operating correctly
+def testWifi(x2,mbRetries,wifiNetwork,wifiRetries):
+    searchString=wifiNetwork
+    retries=wifiRetries
+    sleepSec = 2
+
+    for i in range(0,retries):
+        ssids=[cell.ssid for cell in Cell.all('wlan0')]
+        print("List of all networks found:",ssids)
+        for ssid in ssids:
+            if (searchString in ssid):
+                done=True
+                print("Attempt", i+1, "of", retries, "was successful")
+                print("Found network:",ssid)
+                break
+            else:
+                done=False
+        if(done):
+            return ["Pass"]
+        else:
+            print("Failed to find a network with", searchString, "in it on attempt", i+1, "of", retries)
+            if(i+1<retries):
+                print("Waiting", sleepSec, "seconds and retrying...")
+                time.sleep(sleepSec)
+            else:
+                print("Failed to find network")
+                return ["Fail"]
 
 #This function replaces the standard minimalmodbus address range (0-247) with an extended range (0-255)
 def _checkSlaveaddress(slaveaddress):
