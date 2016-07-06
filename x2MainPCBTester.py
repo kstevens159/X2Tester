@@ -84,6 +84,7 @@ def main():
 
     ##Define GPIO Interface
     GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
+    GPIO.setwarnings(False)
     #Define the pin numbers in a dictionary to allow easy reference
     pin = {"IO1"       :   11,
            "IO2"       :   13,
@@ -105,13 +106,12 @@ def main():
     ########################
 
     #Check if folder is there and if not make
-    os.makedirs("TestResults",exist_ok=True)
-    #Define the file name to be .../TestResults/<CURRENT_DATE>_PCBTestResults.csv
+    os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
+    #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
     name = "PCBTestResults.txt"
     date = datetime.datetime.now().strftime("%Y.%m.%d")
-##    relativePath = "/TestResults/"
 ##    filename = os.path.dirname(__file__)+relativePath+date+"_"+name
-    filename="/home/pi/Documents/"+date+"_"+name
+    filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
 
     #Open the file
     
@@ -395,8 +395,8 @@ if __name__ == "__main__":
         print("User cancelled with Keyboard")
         GPIO.output(pin["IO1"],GPIO.LOW)
         GPIO.cleanup()
-##    except Exception:
-##        print("An error occured")
-##        GPIO.output(pin["IO1"],GPIO.LOW)
-##        GPIO.cleanup()
+    except:
+        print("An error occured")
+        GPIO.output(pin["IO1"],GPIO.LOW)
+        GPIO.cleanup()
         
