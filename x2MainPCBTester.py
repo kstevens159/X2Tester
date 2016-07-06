@@ -44,178 +44,201 @@ from wifi import Cell
 ##print("Minimal Modbus location",minimalmodbus.__file__)
 
 def main():
+    try:
 
-    ##############################
-    ## Define program variables ##
-    ##############################
-    
-    #Device Parameters
-    snlen = 4 #length of the serial number
-    mbRetries = 3 #Number of retries on modbus commands
-    wifiRetries = 25
+        ##############################
+        ## Define program variables ##
+        ##############################
+        
+        #Device Parameters
+        snlen = 4 #length of the serial number
+        mbRetries = 3 #Number of retries on modbus commands
+        wifiRetries = 25
 ##    wifiNetwork = "X2 Logger"
-    wifiNetwork = "ZyXEL"
-    #USB RS-485 Parameters
-    x2mbAddress = 252 #X2 Main universal address
-    baud = 19200
-    parity = 'N'
-    bytesize=8
-    stopbits=1
-    modbusTimeout=0.1
-    comPort = '/dev/ttyUSB0'
+        wifiNetwork = "ZyXEL"
+        #USB RS-485 Parameters
+        x2mbAddress = 252 #X2 Main universal address
+        baud = 19200
+        parity = 'N'
+        bytesize=8
+        stopbits=1
+        modbusTimeout=0.1
+        comPort = '/dev/ttyUSB0'
 
-    ################################
-    ## Setup Devices & Interfaces ##
-    ################################
-    
-    #Open SPI bus for use by the ADC chip
-    spi = spidev.SpiDev()
-    spi.open(0,0)
+        ################################
+        ## Setup Devices & Interfaces ##
+        ################################
+        
+        #Open SPI bus for use by the ADC chip
+        spi = spidev.SpiDev()
+        spi.open(0,0)
 
-    #Setup the modbus instance of the X2
-    x2 = minimalmodbus.Instrument(comPort, x2mbAddress)#Define the minimalmodbus instance
-    x2.serial.baudrate = baud
-    x2.serial.parity = parity
-    x2.serial.bytesize = bytesize
-    x2.serial.stopbits = stopbits
-    x2.serial.timeout = modbusTimeout
-    minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
+        #Setup the modbus instance of the X2
+        x2 = minimalmodbus.Instrument(comPort, x2mbAddress)#Define the minimalmodbus instance
+        x2.serial.baudrate = baud
+        x2.serial.parity = parity
+        x2.serial.bytesize = bytesize
+        x2.serial.stopbits = stopbits
+        x2.serial.timeout = modbusTimeout
+        minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
 ##    x2.debug=True
 
-    ##Define GPIO Interface
-    GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
-    GPIO.setwarnings(False)
-    #Define the pin numbers in a dictionary to allow easy reference
-    pin = {"IO1"       :   11,
-           "IO2"       :   13,
-           "IO3"       :   15,
-           "IO4"       :   12,
-           "TRIGGER1"  :   16,
-           "TRIGGER2"  :   18
-           }
-    #Set the GPIO directions
-    GPIO.setup(pin["IO1"], GPIO.OUT)
-    GPIO.setup(pin["IO2"], GPIO.OUT)
-    GPIO.setup(pin["IO3"], GPIO.OUT)
-    GPIO.setup(pin["IO4"], GPIO.OUT)
-    GPIO.setup(pin["TRIGGER1"], GPIO.OUT)
-    GPIO.setup(pin["TRIGGER2"], GPIO.OUT)
-    
-    ########################
-    ## Create Output File ##
-    ########################
+        ##Define GPIO Interface
+        GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
+        GPIO.setwarnings(False)
+        #Define the pin numbers in a dictionary to allow easy reference
+        pin = {"IO1"       :   11,
+               "IO2"       :   13,
+               "IO3"       :   15,
+               "IO4"       :   12,
+               "TRIGGER1"  :   16,
+               "TRIGGER2"  :   18
+               }
+        #Set the GPIO directions
+        GPIO.setup(pin["IO1"], GPIO.OUT)
+        GPIO.setup(pin["IO2"], GPIO.OUT)
+        GPIO.setup(pin["IO3"], GPIO.OUT)
+        GPIO.setup(pin["IO4"], GPIO.OUT)
+        GPIO.setup(pin["TRIGGER1"], GPIO.OUT)
+        GPIO.setup(pin["TRIGGER2"], GPIO.OUT)
+        
+        ########################
+        ## Create Output File ##
+        ########################
 
-    #Check if folder is there and if not make
-    os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
-    #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
-    name = "PCBTestResults.txt"
-    date = datetime.datetime.now().strftime("%Y.%m.%d")
+        #Check if folder is there and if not make
+        os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
+        #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
+        name = "PCBTestResults.txt"
+        date = datetime.datetime.now().strftime("%Y.%m.%d")
 ##    filename = os.path.dirname(__file__)+relativePath+date+"_"+name
-    filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
+        filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
 
-    #Open the file
-    
-    if(os.path.isfile(filename)):   #If the file exists append it
-        out_records=open(filename, 'a')
-    else:                           #If the file doesn't exist create it and add section headers
-        out_records=open(filename, 'w')
-        out_records.write("Serial Number,"
-                          "3V LDO Status,"
-                          "3V LDO Voltage,"
-                          "Processor & Host RS-485 Status,"
-                          "Wi-Fi Network Status,"
-                          "Wi-Fi Communication Status,"                          
-                          "RTU Battery Status,"
-                          "RTU Battery Voltage,"
-                          "3.3V SEPIC Status,"
-                          "3.3V SEPIC Voltage,"
-                          "EE Status,"
-                          "Serial Flash Status,"
-                          "SD Card Status,"
-                          "Primary Power Switch Status,"
-                          "System Current Status,"
-                          "System Current Value,"
-                          "12V SEPIC Status,"
-                          "5V LDO Status,"
-                          "5V LDO Voltage,"
-                          "12V Sensor Power Switch A Status,"
-                          "12V Sensor Power Switch A Voltage,"
-                          "12V Sensor Power Switch B Status,"
-                          "12V Sensor Power Switch B Voltage,"
-                          "12V Sensor Power Switch C Status,"
-                          "12V Sensor Power Switch C Voltage,"
-                          "12V Sensor Power Switch D Status,"
-                          "12V Sensor Power Switch D Voltage,"
-                          "12V Sensor Current Status,"
-                          "12V Sensor Current Value,"
-                          "Priority Power Output 1 Status,"
-                          "Priority Power Output 1 Voltage,"
-                          "Priority Power Output 2 Status,"
-                          "Priority Power Output 2 Voltage,"
-                          "RS-485 Sensor A,"
-                          "RS-485 Sensor B,"
-                          "RS-485 Sensor C,"
-                          "RS-232 Sensor A,"
-                          "RS-232 Sensor B,"
-                          "RS-232 Sensor C,"
-                          "SDI-12 Sensor A,"
-                          "SDI-12 Sensor B,"
-                          "SDI-12 Sensor C,"
-                          "Magnetic Switch Status,"
-                          "Pressure/Temp/Humidity Chip Status,"
-                          "Passthrough RS-485 Status,"
-                          "Trigger 1 Status,"
-                          "Trigger 2 Status,"
-                          "\n")
-
-
-    ###################
-    ## PCB Test Loop ##
-    ###################
-
-    ##Continually loop through the test process to allow the user to test a batch of PCBs
-    sn = getSN(snlen)
-    while (sn != "-1"): #Loop through all PCBs to be tested
-        out_records.write("%s" % sn) #Write serial number to file
-
-        #Test the 3V LDO
-        print("\n------------------------------")
-        print("Testing the 3V LDO...")
-        result=test3VLDO(GPIO,pin,spi) #Call the 3V LDO test module
-        print("Test result:",result)
-        out_records.write(",%s,%s" % (result[0],result[1])) #Write the result to the file
-        print("------------------------------\n")
-
-        #Test the RS-485 driver and processor
-        print("\n------------------------------")
-        print("Testing the Processor & RS-485 Modbus Communication...")
-        result=testProcAndRS485(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
-        print("Test result:",result)
-        out_records.write(",%s" % (result[0])) #Write the result to the file
-        print("------------------------------\n")
-
-        #Test the Wi-Fi module
-        print("\n------------------------------")
-        print("Testing the Wi-Fi Module...")
-        result=testWifi(x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
-        print("Test result:",result)
-        out_records.write(",%s" % (result[0])) #Write the result to the file
-        print("------------------------------\n")
+        #Open the file
+        
+        if(os.path.isfile(filename)):   #If the file exists append it
+            out_records=open(filename, 'a')
+        else:                           #If the file doesn't exist create it and add section headers
+            out_records=open(filename, 'w')
+            out_records.write("Serial Number,"
+                              "3V LDO Status,"
+                              "3V LDO Voltage,"
+                              "Processor & Host RS-485 Status,"
+                              "Wi-Fi Network Status,"
+                              "Wi-Fi Communication Status,"                          
+                              "RTU Battery Status,"
+                              "RTU Battery Voltage,"
+                              "3.3V SEPIC Status,"
+                              "3.3V SEPIC Voltage,"
+                              "EE Status,"
+                              "Serial Flash Status,"
+                              "SD Card Status,"
+                              "Primary Power Switch Status,"
+                              "System Current Status,"
+                              "System Current Value,"
+                              "12V SEPIC Status,"
+                              "5V LDO Status,"
+                              "5V LDO Voltage,"
+                              "12V Sensor Power Switch A Status,"
+                              "12V Sensor Power Switch A Voltage,"
+                              "12V Sensor Power Switch B Status,"
+                              "12V Sensor Power Switch B Voltage,"
+                              "12V Sensor Power Switch C Status,"
+                              "12V Sensor Power Switch C Voltage,"
+                              "12V Sensor Power Switch D Status,"
+                              "12V Sensor Power Switch D Voltage,"
+                              "12V Sensor Current Status,"
+                              "12V Sensor Current Value,"
+                              "Priority Power Output 1 Status,"
+                              "Priority Power Output 1 Voltage,"
+                              "Priority Power Output 2 Status,"
+                              "Priority Power Output 2 Voltage,"
+                              "RS-485 Sensor A,"
+                              "RS-485 Sensor B,"
+                              "RS-485 Sensor C,"
+                              "RS-232 Sensor A,"
+                              "RS-232 Sensor B,"
+                              "RS-232 Sensor C,"
+                              "SDI-12 Sensor A,"
+                              "SDI-12 Sensor B,"
+                              "SDI-12 Sensor C,"
+                              "Magnetic Switch Status,"
+                              "Pressure/Temp/Humidity Chip Status,"
+                              "Passthrough RS-485 Status,"
+                              "Trigger 1 Status,"
+                              "Trigger 2 Status,"
+                              "\n")
 
 
-        #Turn off the board
-        GPIO.output(pin["IO1"],GPIO.LOW)
+        ###################
+        ## PCB Test Loop ##
+        ###################
 
-        input("The current board has finished testing and is safe to remove.\n"
-              "Press Enter to continue")
+        ##Continually loop through the test process to allow the user to test a batch of PCBs
+        sn = getSN(snlen)
+        while (sn != "-1"): #Loop through all PCBs to be tested
+            out_records.write("%s" % sn) #Write serial number to file
 
-        #Prepare for next board
-        out_records.write("\n")#Line return to go to next record
-        out_records.flush()
-        sn = getSN(snlen) #Get new board SN
+            #Test the 3V LDO
+            print("\n------------------------------")
+            print("Testing the 3V LDO...")
+            result=test3VLDO(GPIO,pin,spi) #Call the 3V LDO test module
+            print("Test result:",result)
+            out_records.write(",%s,%s" % (result[0],result[1])) #Write the result to the file
+            print("------------------------------\n")
 
-    #close the file
-    out_records.close
+            #Test the RS-485 driver and processor
+            print("\n------------------------------")
+            print("Testing the Processor & RS-485 Modbus Communication...")
+            result=testProcAndRS485(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
+            print("Test result:",result)
+            out_records.write(",%s" % (result[0])) #Write the result to the file
+            print("------------------------------\n")
+
+            #Test the Wi-Fi module
+            print("\n------------------------------")
+            print("Testing the Wi-Fi Module...")
+            result=testWifi(x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
+            print("Test result:",result)
+            out_records.write(",%s" % (result[0])) #Write the result to the file
+            print("------------------------------\n")
+
+
+            #Turn off the board
+            GPIO.output(pin["IO1"],GPIO.LOW)
+
+            input("The current board has finished testing and is safe to remove.\n"
+                  "Press Enter to continue")
+
+            #Prepare for next board
+            out_records.write("\n")#Line return to go to next record
+            out_records.flush()
+            sn = getSN(snlen) #Get new board SN
+
+        #close the file
+        out_records.close
+
+        #Clean up GPIOs
+        GPIO.cleanup()
+
+    except KeyboardInterrupt:
+        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
+        out_records.close #Close the file
+        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to PCB
+        GPIO.cleanup() #Clean up GPIOs
+        print("\n==============================\n")
+        print("The program encountered an error!\n")
+        print("==============================\n")
+        input("Press Enter to exit")
+    except:
+        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
+        out_records.close #Close the file
+        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to PCB
+        GPIO.cleanup() #Clean up GPIOs
+        print("\n==============================\n")
+        print("The program encountered an error!\n")
+        print("==============================\n")
+        input("Press Enter to exit")
 
 
 ###############
@@ -327,7 +350,7 @@ def testProcAndRS485(GPIO,pin,x2,mbRetries):
     #Write a new address
     print("Writing address...")
     if(readResult[0]==1): #If the current address is already 1, change to 2, then back to 1
-        writeResult = mbWriteRetries(x2,Reg.mbReg["Add"][0],[2],retries=mbRetries)
+        writeResult = mbWriteRetries(x2,Reg.mbReg["asdf"][0],[2],retries=mbRetries)
         if(writeResult):
             print("The device's new address is",writeResult[0])
         else:
@@ -388,15 +411,5 @@ def _checkSlaveaddress(slaveaddress):
             
 
 if __name__ == "__main__":
-    try:
-        main()
-        GPIO.cleanup()
-    except KeyboardInterrupt:
-        print("User cancelled with Keyboard")
-        GPIO.output(pin["IO1"],GPIO.LOW)
-        GPIO.cleanup()
-    except:
-        print("An error occured")
-        GPIO.output(pin["IO1"],GPIO.LOW)
-        GPIO.cleanup()
+    main()
         
