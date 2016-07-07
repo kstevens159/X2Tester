@@ -36,6 +36,7 @@ import x2mbRegisters as Reg
 import minimalmodbus
 import RPi.GPIO as GPIO
 from wifi import Cell
+import struct
 
 ##import sys
 ##print(sys.path, "\n")
@@ -123,11 +124,13 @@ def main():
             out_records.write("Serial Number,"
                               "3V LDO Status,"
                               "3V LDO Voltage,"
-                              "Processor & Host RS-485 Status,"
+                              "Processor & Host RS-485 Status,"                         
+                              "RTC Battery Read Status,"
+                              "RTC Battery Read Voltage,"
+                              "RTC Clock Retention Status,"
+                              "RTC Clock Retention Difference,"
                               "Wi-Fi Network Status,"
-                              "Wi-Fi Communication Status,"                          
-                              "RTU Battery Status,"
-                              "RTU Battery Voltage,"
+                              "Wi-Fi Communication Status,"                               
                               "3.3V SEPIC Status,"
                               "3.3V SEPIC Voltage,"
                               "EE Status,"
@@ -183,6 +186,7 @@ def main():
             print("\n------------------------------")
             print("Testing the 3V LDO...")
             result=test3VLDO(GPIO,pin,spi) #Call the 3V LDO test module
+            print ("=====================")
             print("Test result:",result)
             out_records.write(",%s,%s" % (result[0],result[1])) #Write the result to the file
             print("------------------------------\n")
@@ -191,14 +195,7 @@ def main():
             print("\n------------------------------")
             print("Testing the Processor & RS-485 Modbus Communication...")
             result=testProcAndRS485(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
-            print("Test result:",result)
-            out_records.write(",%s" % (result[0])) #Write the result to the file
-            print("------------------------------\n")
-
-            #Test the Wi-Fi module
-            print("\n------------------------------")
-            print("Testing the Wi-Fi Module...")
-            result=testWifi(x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
+            print ("=====================")
             print("Test result:",result)
             out_records.write(",%s" % (result[0])) #Write the result to the file
             print("------------------------------\n")
@@ -207,9 +204,21 @@ def main():
             print("\n------------------------------")
             print("Testing the RTC Clock...")
             result=testRTC(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
+            print ("=====================")
+            print("Test result:",result)
+            out_records.write(",%s,%s,%s,%s" % (result[0],result[1],result[2],result[3])) #Write the result to the file
+            print("------------------------------\n")
+
+            #Test the Wi-Fi module
+            print("\n------------------------------")
+            print("Testing the Wi-Fi Module...")
+            result=testWifi(GPIO,pin,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
+            print ("=====================")
             print("Test result:",result)
             out_records.write(",%s" % (result[0])) #Write the result to the file
             print("------------------------------\n")
+
+
 
 
             #Turn off the board
@@ -241,23 +250,34 @@ def main():
         print("The program encountered an error!\n")
         print("==============================\n")
         input("Press Enter to exit")
-    except:
-        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
-        out_records.close #Close the file
-        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to Primary Power
-        GPIO.output(pin["IO2"],GPIO.LOW) #Turn power off to Secondary Power
-        GPIO.output(pin["IO3"],GPIO.LOW) #Turn power off to Backup Power
-        GPIO.output(pin["IO4"],GPIO.LOW) #Turn power off to T-Node
-        GPIO.cleanup() #Clean up GPIOs
-        print("\n==============================\n")
-        print("The program encountered an error!\n")
-        print("==============================\n")
-        input("Press Enter to exit")
+##    except:
+##        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
+##        out_records.close #Close the file
+##        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to Primary Power
+##        GPIO.output(pin["IO2"],GPIO.LOW) #Turn power off to Secondary Power
+##        GPIO.output(pin["IO3"],GPIO.LOW) #Turn power off to Backup Power
+##        GPIO.output(pin["IO4"],GPIO.LOW) #Turn power off to T-Node
+##        GPIO.cleanup() #Clean up GPIOs
+##        print("\n==============================\n")
+##        print("The program encountered an error!\n")
+##        print("==============================\n")
+##        input("Press Enter to exit")
 
 
 ###############
 ## Functions ##
 ###############
+
+# This function is able to take up to 4 16-bit hex values as a list and
+# combine them into a single value
+def combineFrom16Bits(separate):
+    # Loop through all the sent values and add them to the end value
+    combined = 0
+    k=len(separate)
+    for i in range(0,len(separate)):
+        combined = combined + (separate[k-1]<<(16*i)) #Shift by 16-bits times the location
+        k=k-1
+    return combined
 
 #Used to get the PCB's serial number and ensure it is valid
 def getSN(snlen):
@@ -302,6 +322,13 @@ def mbWriteRetries(device,reg,value,retries=5):
         return False
     return value
 
+#Used to check the current status of the PCB's power and disable
+#power if it is on
+def power0off(GPIO,pin):
+    if(GPIO.input(pin["IO1"])== 1):
+        GPIO.output(pin["IO1"],GPIO.LOW)
+    return True
+
 #Used to check the current status of the PCB's power and enable
 #power if it is off
 def power0on(GPIO,pin):
@@ -325,6 +352,19 @@ def readAnalog(spi,ch,scale=1): #ch must be 0-7
 
     return scaledVolts
 
+# This function take a 16-64 bit value and split it into a list of 16-bit values
+def splitInto16Bits(combined):
+    #Take the values and pack and unpack them appropriatly to get a list of 16-bit hex values
+    rawSeparate=struct.unpack('>4H',struct.pack('>Q',combined))
+
+    #Loop through the list and remove any 0 values from the front of the list
+    k=0
+    separate=[]
+    for i in range(0,4):
+        if (rawSeparate[i] != 0):
+            separate.append(rawSeparate[i])
+            k=k+1  
+    return separate
 
 #Tests the 3V LDO is functioning correctly
 def test3VLDO(GPIO,pin,spi):
@@ -359,7 +399,7 @@ def testProcAndRS485(GPIO,pin,x2,mbRetries):
         print("The device's original address is",readResult[0],"\n")
     else:
         print("The read was not successful\n")
-        return ["Fail"]
+        return ["Fail-Initial read was not successful"]
 
     #Write a new address
     print("Writing address...")
@@ -368,26 +408,31 @@ def testProcAndRS485(GPIO,pin,x2,mbRetries):
         if(writeResult):
             print("The device's new address is",writeResult[0])
         else:
-            print("The write was not successful\n")
-            return ["Fail"]
+            print("The write was not successful")
+            return ["Fail-Writing address was not successful"]
         writeResult = mbWriteRetries(x2,Reg.mbReg["Add"][0],[1],retries=mbRetries)#Change address back to 1
+        if(writeResult):
+            print("The device's address was set back to",writeResult[0])
+        else:
+            print("The write was not successful")
+            return ["Fail-Changing address back to 1 was not successful"]
         time.sleep(0.01) #Without this the address doesn't read back right
         readResult = mbReadRetries(x2,Reg.mbReg["Add"][0],Reg.mbReg["Add"][1],retries=mbRetries)
         if(readResult):
-            print("The device's address was set back to",readResult[0],"\n")
+            print("The device's final address is",readResult[0])
             return ["Pass"]
         else:
-            print("Resetting the address to %d was not successful\n" % writeResult[0])
-            return ["Fail"]
+            print("Resetting the address to %d was not successful" % writeResult[0])
+            return ["Fail-Final read was not successful"]
 
     else: #If the address is anything besides 1, change to 1
         writeResult = mbWriteRetries(x2,Reg.mbReg["Add"][0],[1],retries=mbRetries)
         if(writeResult):
-            print("The device's new address is",writeResult[0],"\n")
+            print("The device's new address is",writeResult[0])
             return ["Pass"]
         else:
-            print("The write was not successful\n")
-            return ["Fail"]
+            print("The write was not successful")
+            return ["Fail-Writing address was not successful"]
 
 #Test RTC Battery Functionality
 def testRTC(GPIO,pin,x2,mbRetries):
@@ -395,40 +440,90 @@ def testRTC(GPIO,pin,x2,mbRetries):
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
-    print ("Testing reading & writing Modbus address\n")
-
+  
     #Read the RTC Voltage
     print("Reading the RTC Voltage...")
-    readResult = mbReadRetries(x2,Reg.mbReg["RTCBAT"][0],Reg.mbReg["RTCBAT"][1],retries=mbRetries)
-    if(readResult):
-        print("The RTC Battery voltage is",readResult[0],"\n")
+    RTCVoltageReadResult = mbReadRetries(x2,Reg.mbReg["RTCBAT"][0],Reg.mbReg["RTCBAT"][1],retries=mbRetries)
+    if(RTCVoltageReadResult):
+        print("The RTC Battery voltage is",RTCVoltageReadResult[0],"\n")
+        if(RTCVoltageReadResult[0]>2.8 and RTCVoltageReadResult[0]<3.2):
+            RTCVoltageResult="Pass"
+        else:
+            RTCVoltageResult="Fail-Voltage out of range"
     else:
-        print("The read was not successful\n")
-        return ["Fail"]
+        print("The RTC Battery voltage read was not successful\n")
+        RTCVoltageReadResult=-999999
+        RTCVoltageResult="Fail-Initial Read not successful"
 
-    CurrentEpochTime=time.time()
+    #Read the current time
+    print("Reading Time from X2...")
+    initialTimeReadResult = mbReadRetries(x2,0x701C,4) #Read from the X2
+    if(initialTimeReadResult):
+        readTime1=[initialTimeReadResult[0],initialTimeReadResult[1]] #The first two 16 bits are the time, the next two are the tz offset
+        convResult1 = combineFrom16Bits(readTime1) #Convert to a single 32-bit time
+        formatedDateTime1 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(convResult1)) # Convert from Epoch to readable
+        print("The device's original time is",formatedDateTime1,"\n")
 
-    #Read the Current Time
-    print("Reading the Time...")
-    readResult = mbReadRetries(x2,Reg.mbReg["ReadTime"][0],Reg.mbReg["ReadTime"][1],retries=mbRetries)
-    if(readResult):
-        print("The current time is",readResult[0],"\n")
-    else:
-        print("The read was not successful\n")
-        return ["Fail"]
+        #Write the current system time
+        print("Writing Current Time...")
+        currentPCTime=int(time.time()) #Read the current time from the system
+        formatedDateTime2 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(currentPCTime)) # Convert from Epoch to readable
+        print("Current computer time is:",formatedDateTime2)
+        timeIn16bit = splitInto16Bits(currentPCTime) # Convert into separate 16-bit values
+        tzOffset=0x0000 # Set the time zone offset to 0 for UTC time
+        writeResult = mbWriteRetries(x2,0x701C,[timeIn16bit[0],timeIn16bit[1],0,0]) #Write to X2
+        if(writeResult):
+            print("The write was successful\n")
 
-##    #Set the time to current
-##    print("Setting time...")
-##    writeResult = mbWriteRetries(x2,Reg.mbReg["SetTime"][0],[CurrentEpochTime],retries=mbRetries)
-##        if(writeResult):
-##            print("The device's new address is",writeResult[0],"\n")
-##            return ["Pass"]
-##        else:
-##            print("The write was not successful\n")
-##            return ["Fail"]
+            #Check if the board keeps time on a power cycle
+            print("Cycling Power to board...\n")
+            power0off(GPIO,pin)
+            print("Waiting 1 seconds...\n")
+            time.sleep(1)
+            print("Turning board back on and checking time is accurate")
+            power0on(GPIO,pin)
+
+            #Read the boards current time
+            print("Reading Time from X2...")
+            finalTimeReadResult = mbReadRetries(x2,0x701C,4) #Read from the X2
+            if(finalTimeReadResult):
+                readTime2=[finalTimeReadResult[0],finalTimeReadResult[1]] #The first two 16 bits are the time, the next two are the tz offset
+                convResult2 = combineFrom16Bits(readTime2) #Convert to a single 32-bit time
+                formatedDateTime2 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(convResult2)) # Convert from Epoch to readable
+                print("The device's final time is",formatedDateTime2,"\n")
+
+                timeDiff = convResult2 - int(time.time()) #Determine if time is saved
+
+                if (timeDiff >= -5 and timeDiff <= 5):
+                    print("Success! The RTC Clock was",timeDiff,"seconds off")
+                    timeDiffResult="Pass"
+                else: #If time difference is wrong
+                    print("Failure! The RTC Clock was",timeDiff,"seconds off")
+                    timeDiffResult="Fail"
+            else: #If final time read fails
+                print("The final time read was not successful\n")
+                timeDiff=-999999
+                timeDiffResult="Fail-Final time read not successful"
+        else: #if time write fails
+            print("The time write was not successful\n")
+            timeDiff=-999999
+            timeDiffResult="Fail-Time write not successful"            
+    else: #If the initial time read fails
+        print("The initial time read was not successful\n")
+        timeDiff=-999999
+        timeDiffResult="Fail-Initial time read not successful"        
+
+    return [RTCVoltageResult,RTCVoltageReadResult[0],timeDiffResult,timeDiff]
 
 #Test the Wi-Fi modules is operating correctly
-def testWifi(x2,mbRetries,wifiNetwork,wifiRetries):
+def testWifi(GPIO,pin,x2,mbRetries,wifiNetwork,wifiRetries):
+    power0on(GPIO,pin)
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+
+    #NEED TO TURN ON WIFI SWITCH
+
     searchString=wifiNetwork
     retries=wifiRetries
     sleepSec = 2

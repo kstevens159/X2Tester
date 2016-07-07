@@ -3,6 +3,7 @@
 import minimalmodbus
 import datetime
 import time
+import struct
 
 def main():
 
@@ -64,7 +65,10 @@ def ReadClock(x2,add):
     #Read the current time
     print("Reading Time...")
     readResult = mbReadRetries(x2,0x701C,4)
-    convResult = two16ToOne32(readResult[0],readResult[1])
+    readTime=[readResult[0],readResult[1]] #The first two 16 bits are the time, the next two are the tz offset
+##    convResult = two16ToOne32(readResult[0],readResult[1])
+    convResult = combineFrom16Bits(readTime)
+    print("The conv result is:",hex(convResult))
     formatedDateTime1 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(convResult))
     if(readResult):
         print("The device's original time is",formatedDateTime1,"\n")
@@ -76,7 +80,8 @@ def ReadClock(x2,add):
     currentTime=int(time.time())
     formatedDateTime2 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(currentTime))
     print("Current computer time is:",formatedDateTime2)
-    timeIn16bit = one32toTwo16(currentTime)
+##    timeIn16bit = one32toTwo16(currentTime)
+    timeIn16bit = splitInto16Bits(currentTime)
     tzOffset=0x0000
     writeResult = mbWriteRetries(x2,0x701C,[timeIn16bit[0],timeIn16bit[1],0,0])
     if(writeResult):
@@ -87,23 +92,49 @@ def ReadClock(x2,add):
     #Read the current time
     print("Reading Time...")
     readResult = mbReadRetries(x2,0x701C,4)
-    convResult = two16ToOne32(readResult[0],readResult[1])
+    readTime=[readResult[0],readResult[1]] #The first two 16 bits are the time, the next two are the tz offset
+##    convResult = two16ToOne32(readResult[0],readResult[1])
+    convResult = combineFrom16Bits(readTime)
     formatedDateTime3 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(convResult))
     if(readResult):
         print("The device's new time is",formatedDateTime3,"\n")
     else:
         print("The read was not successful\n")
 
-def two16ToOne32(a16bit1,a16bit2):
-    first16hex = eval(hex(a16bit1))
-    a32bit = (a16bit1 << 16) + eval(hex(a16bit2))
-    return a32bit
 
-def one32toTwo16(a32bit):
-    a32bithex=eval(hex(a32bit))
-    a16bit1=(a32bithex >> 16)&0xffff
-    a16bit2=a32bithex&0xffff
-    return [a16bit1,a16bit2]
+
+def splitInto16Bits(combined):
+    rawSeparate=struct.unpack('>4H',struct.pack('>Q',combined))
+##    print(hex(rawSeparate[0]),hex(rawSeparate[1]),hex(rawSeparate[2]),hex(rawSeparate[3]))
+    k=0
+    separate=[]
+    for i in range(0,4):
+        if (rawSeparate[i] != 0):
+            separate.append(rawSeparate[i])
+            k=k+1  
+    return separate
+
+def combineFrom16Bits(separate):
+    combined = 0
+##    print(separate)
+    k=len(separate)
+##    print(k)
+    for i in range(0,len(separate)):
+        combined = combined + (separate[k-1]<<(16*i))
+        k=k-1
+    return combined
+
+
+##def two16ToOne32(a16bit1,a16bit2):
+##    first16hex = eval(hex(a16bit1))
+##    a32bit = (a16bit1 << 16) + eval(hex(a16bit2))
+##    return a32bit
+##
+##def one32toTwo16(a32bit):
+##    a32bithex=eval(hex(a32bit))
+##    a16bit1=(a32bithex >> 16)&0xffff
+##    a16bit2=a32bithex&0xffff
+##    return [a16bit1,a16bit2]
     
 def AddressChangeTest(x2,add):
     print ("=====================")
