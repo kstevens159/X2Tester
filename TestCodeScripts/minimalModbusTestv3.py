@@ -7,7 +7,8 @@ import time
 def main():
 
     ##Define port settings
-    x2mbAddress = 252
+##    x2mbAddress = 252
+    x2mbAddress = 1
     baud = 19200
     parity = 'N'
     bytesize=8
@@ -28,8 +29,10 @@ def main():
     ##Main Code
     
     #Test read/write
-    AddressChangeTest(x2,x2mbAddress)
+##    AddressChangeTest(x2,x2mbAddress)
 
+    ReadClock(x2,x2mbAddress)
+    
 ##    readResult = x2.read_registers(0x1000,1,functioncode=4)
 ####    readResult = mbReadRetries(x2,0x1000,1,3)
 ##    print(readResult)
@@ -51,6 +54,56 @@ def main():
 ##############################
 ########  FUNCTIONS  #########
 ##############################
+
+def ReadClock(x2,add):
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+    print ("Testing reading & writing Modbus address\n")
+
+    #Read the current time
+    print("Reading Time...")
+    readResult = mbReadRetries(x2,0x701C,4)
+    convResult = two16ToOne32(readResult[0],readResult[1])
+    formatedDateTime1 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(convResult))
+    if(readResult):
+        print("The device's original time is",formatedDateTime1,"\n")
+    else:
+        print("The read was not successful\n")
+
+    #Write the current system time
+    print("Writing Current Time...")
+    currentTime=int(time.time())
+    formatedDateTime2 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(currentTime))
+    print("Current computer time is:",formatedDateTime2)
+    timeIn16bit = one32toTwo16(currentTime)
+    tzOffset=0x0000
+    writeResult = mbWriteRetries(x2,0x701C,[timeIn16bit[0],timeIn16bit[1],0,0])
+    if(writeResult):
+        print("The write was successful\n")
+    else:
+        print("The write was not successful\n")
+
+    #Read the current time
+    print("Reading Time...")
+    readResult = mbReadRetries(x2,0x701C,4)
+    convResult = two16ToOne32(readResult[0],readResult[1])
+    formatedDateTime3 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(convResult))
+    if(readResult):
+        print("The device's new time is",formatedDateTime3,"\n")
+    else:
+        print("The read was not successful\n")
+
+def two16ToOne32(a16bit1,a16bit2):
+    first16hex = eval(hex(a16bit1))
+    a32bit = (a16bit1 << 16) + eval(hex(a16bit2))
+    return a32bit
+
+def one32toTwo16(a32bit):
+    a32bithex=eval(hex(a32bit))
+    a16bit1=(a32bithex >> 16)&0xffff
+    a16bit2=a32bithex&0xffff
+    return [a16bit1,a16bit2]
     
 def AddressChangeTest(x2,add):
     print ("=====================")

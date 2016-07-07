@@ -203,6 +203,14 @@ def main():
             out_records.write(",%s" % (result[0])) #Write the result to the file
             print("------------------------------\n")
 
+            #Test the RTC Clock & Battery
+            print("\n------------------------------")
+            print("Testing the RTC Clock...")
+            result=testRTC(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
+            print("Test result:",result)
+            out_records.write(",%s" % (result[0])) #Write the result to the file
+            print("------------------------------\n")
+
 
             #Turn off the board
             GPIO.output(pin["IO1"],GPIO.LOW)
@@ -224,7 +232,10 @@ def main():
     except KeyboardInterrupt:
         out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
         out_records.close #Close the file
-        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to PCB
+        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to Primary Power
+        GPIO.output(pin["IO2"],GPIO.LOW) #Turn power off to Secondary Power
+        GPIO.output(pin["IO3"],GPIO.LOW) #Turn power off to Backup Power
+        GPIO.output(pin["IO4"],GPIO.LOW) #Turn power off to T-Node
         GPIO.cleanup() #Clean up GPIOs
         print("\n==============================\n")
         print("The program encountered an error!\n")
@@ -233,7 +244,10 @@ def main():
     except:
         out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
         out_records.close #Close the file
-        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to PCB
+        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to Primary Power
+        GPIO.output(pin["IO2"],GPIO.LOW) #Turn power off to Secondary Power
+        GPIO.output(pin["IO3"],GPIO.LOW) #Turn power off to Backup Power
+        GPIO.output(pin["IO4"],GPIO.LOW) #Turn power off to T-Node
         GPIO.cleanup() #Clean up GPIOs
         print("\n==============================\n")
         print("The program encountered an error!\n")
@@ -350,7 +364,7 @@ def testProcAndRS485(GPIO,pin,x2,mbRetries):
     #Write a new address
     print("Writing address...")
     if(readResult[0]==1): #If the current address is already 1, change to 2, then back to 1
-        writeResult = mbWriteRetries(x2,Reg.mbReg["asdf"][0],[2],retries=mbRetries)
+        writeResult = mbWriteRetries(x2,Reg.mbReg["Add"][0],[2],retries=mbRetries)
         if(writeResult):
             print("The device's new address is",writeResult[0])
         else:
@@ -374,6 +388,44 @@ def testProcAndRS485(GPIO,pin,x2,mbRetries):
         else:
             print("The write was not successful\n")
             return ["Fail"]
+
+#Test RTC Battery Functionality
+def testRTC(GPIO,pin,x2,mbRetries):
+    power0on(GPIO,pin)
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+    print ("Testing reading & writing Modbus address\n")
+
+    #Read the RTC Voltage
+    print("Reading the RTC Voltage...")
+    readResult = mbReadRetries(x2,Reg.mbReg["RTCBAT"][0],Reg.mbReg["RTCBAT"][1],retries=mbRetries)
+    if(readResult):
+        print("The RTC Battery voltage is",readResult[0],"\n")
+    else:
+        print("The read was not successful\n")
+        return ["Fail"]
+
+    CurrentEpochTime=time.time()
+
+    #Read the Current Time
+    print("Reading the Time...")
+    readResult = mbReadRetries(x2,Reg.mbReg["ReadTime"][0],Reg.mbReg["ReadTime"][1],retries=mbRetries)
+    if(readResult):
+        print("The current time is",readResult[0],"\n")
+    else:
+        print("The read was not successful\n")
+        return ["Fail"]
+
+##    #Set the time to current
+##    print("Setting time...")
+##    writeResult = mbWriteRetries(x2,Reg.mbReg["SetTime"][0],[CurrentEpochTime],retries=mbRetries)
+##        if(writeResult):
+##            print("The device's new address is",writeResult[0],"\n")
+##            return ["Pass"]
+##        else:
+##            print("The write was not successful\n")
+##            return ["Fail"]
 
 #Test the Wi-Fi modules is operating correctly
 def testWifi(x2,mbRetries,wifiNetwork,wifiRetries):
