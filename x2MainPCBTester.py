@@ -198,7 +198,7 @@ def main():
             #Test the RTC Clock & Battery
             print("\n------------------------------")
             print("Testing the RTC Clock...")
-            result3=testRTC(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
+            result3=testRTC(GPIO,pin,x2,mbRetries) #Call the RTC Test module
             print ("=====================")
             print("Test result:",result3)
             out_records.write(",%s,%s,%s,%s" % (result3[0],result3[1],result3[2],result3[3])) #Write the result to the file
@@ -207,7 +207,7 @@ def main():
             #Test the 3.3V SEPIC Converter
             print("\n------------------------------")
             print("Testing the 3.3V SEPIC Converter...")
-            result4=test33SEPIC(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
+            result4=test33SEPIC(GPIO,pin,x2,mbRetries) #Call the 3.3V SEPIC test module
             print ("=====================")
             print("Test result:",result4)
             out_records.write(",%s,%s" % (result4[0],result4[1])) #Write the result to the file
@@ -216,13 +216,23 @@ def main():
             #Test the Serial Flash
             print("\n------------------------------")
             print("Testing the Serial Flash...")
-##            result5=testSerialFlash(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
+##            result5=testSerialFlash(GPIO,pin,x2,mbRetries) #Call the serial flash test module
             print ("=====================")
 ##            print("Test result:",result5)
             print("Serial Flash test skipped")
 ##            out_records.write(",%s,%s" % (result5[0])) #Write the result to the file
             out_records.write(",Not tested")
             print("------------------------------\n")
+
+            #Test SD Card
+            print("\n------------------------------")
+            print("Testing the SD Card...")
+            result6=testSDCard(GPIO,pin,x2,mbRetries) #Call the SD Card test module
+            print ("=====================")
+            print("Test result:",result6)
+            out_records.write(",%s" % (result6[0])) #Write the result to the file
+            print("------------------------------\n")
+            
 
             
 
@@ -273,18 +283,18 @@ def main():
         print("The program encountered an error!\n")
         print("==============================\n")
         input("Press Enter to exit")
-    except:
-        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
-        out_records.close #Close the file
-        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to Primary Power
-        GPIO.output(pin["IO2"],GPIO.LOW) #Turn power off to Secondary Power
-        GPIO.output(pin["IO3"],GPIO.LOW) #Turn power off to Backup Power
-        GPIO.output(pin["IO4"],GPIO.LOW) #Turn power off to T-Node
-        GPIO.cleanup() #Clean up GPIOs
-        print("\n==============================\n")
-        print("The program encountered an error!\n")
-        print("==============================\n")
-        input("Press Enter to exit")
+##    except:
+##        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
+##        out_records.close #Close the file
+##        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to Primary Power
+##        GPIO.output(pin["IO2"],GPIO.LOW) #Turn power off to Secondary Power
+##        GPIO.output(pin["IO3"],GPIO.LOW) #Turn power off to Backup Power
+##        GPIO.output(pin["IO4"],GPIO.LOW) #Turn power off to T-Node
+##        GPIO.cleanup() #Clean up GPIOs
+##        print("\n==============================\n")
+##        print("The program encountered an error!\n")
+##        print("==============================\n")
+##        input("Press Enter to exit")
 
 
 ###############
@@ -443,7 +453,7 @@ def test3VLDO(GPIO,pin,spi):
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
-    print ("Testing 3V LDO...\n")
+    print ("Testing 3V LDO\n")
 
     print("Reading 3V LDO Voltage...")
     analog0 = readAnalog(spi,0) #Read SPI0 ch. 0
@@ -495,9 +505,10 @@ def testProcEEAndRS485(GPIO,pin,x2,mbRetries):
             return ["Fail-Writing address was not successful","Fail-EE not tested"]
 
         #Cycle the power to confirm address is written to and can be read from EE
+        print("\nTesting EE Chip")
         print("Power cycling to confirm EE works...")
         power0off(GPIO,pin)
-        print("Power off. Waiting 1 second")
+        print("Power off.\nWaiting 1 second")
         time.sleep(1)
         power0on(GPIO,pin)
         print("Power on")
@@ -555,8 +566,10 @@ def testRTC(GPIO,pin,x2,mbRetries):
     if(RTCVoltageReadResult):
         print("The RTC Battery voltage is",RTCVoltageReadResult[0],"\n")
         if(RTCVoltageReadResult[0]>2.8 and RTCVoltageReadResult[0]<3.2):
+            print("The RTC Voltage is in range")
             RTCVoltageResult="Pass"
         else:
+            print("The RTC Voltage is NOT in range")
             RTCVoltageResult="Fail-Voltage out of range"
     else:
         print("The RTC Battery voltage read was not successful\n")
@@ -622,6 +635,34 @@ def testRTC(GPIO,pin,x2,mbRetries):
         timeDiffResult="Fail-Initial time read not successful"        
 
     return [RTCVoltageResult,RTCVoltageReadResult[0],timeDiffResult,timeDiff]
+
+#Test SD Card is working
+def testSDCard(GPIO,pin,x2,mbRetries):
+    power0on(GPIO,pin)
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+
+    #Read the SD Card Status
+    print("Reading SD Card Status...")
+    readResult = mbReadRetries(x2,Reg.mbReg["SDTest"][0],Reg.mbReg["SDTest"][1],retries=mbRetries)
+    if(readResult):
+        if(readResult[0]==1):
+            print("The SD card status is good")
+            return ["Pass"]
+        elif(readResult[0]==0):
+            print("The SD card status is bad")
+            return ["Fail-The SD card status was returned as bad"]
+        else:
+            print("The SD card status is unknown")
+            return ["Fail-The SD card status was returned as an unknown value"]
+    else:
+        print("The read was not successful")
+        return ["Fail-The Modbus read failed. No status received"]
+
+
+
+    
 
 #Test the Wi-Fi module is operating correctly
 def testWifi(GPIO,pin,x2,mbRetries,wifiNetwork,wifiRetries):
