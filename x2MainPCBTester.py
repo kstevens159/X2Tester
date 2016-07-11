@@ -83,12 +83,14 @@ def main():
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
         GPIO.setwarnings(False)
         #Define the pin numbers in a dictionary to allow easy reference
-        pinDict = {"IO1"       :   11,
-                   "IO2"       :   13,
-                   "IO3"       :   15,
-                   "IO4"       :   12,
-                   "TRIGGER1"  :   16,
-                   "TRIGGER2"  :   18
+        pinDict = {"IO1"        :   11,
+                   "IO2"        :   11, #Used for testing
+                   "IO3"        :   11, #Used for testing
+##                   "IO2"        :   13,
+##                   "IO3"        :   15,
+                   "IO4"        :   12,
+                   "TRIGGER1"   :   16,
+                   "TRIGGER2"   :   18
                   }
         #Set the GPIO directions
         GPIO.setup(pinDict["IO1"], GPIO.OUT)
@@ -107,7 +109,6 @@ def main():
         #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
         name = "PCBTestResults.txt"
         date = datetime.datetime.now().strftime("%Y.%m.%d")
-##    filename = os.path.dirname(__file__)+relativePath+date+"_"+name
         filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
 
         #Open the file
@@ -129,7 +130,17 @@ def main():
                               "3.3V SEPIC Voltage,"
                               "Serial Flash Status,"
                               "SD Card Status,"
+                              "Backup Power Switch Status,"
+                              "Backup Power Voltage,"
+                              "Backup Valid,"
+                              "Secondary Power Switch Status,"
+                              "Secondary Power Voltage,"
+                              "Secondary Valid,"
                               "Primary Power Switch Status,"
+                              "Primary Power Voltage,"
+                              "Primary Valid,"
+                              "PPP_1DISCON Status,"
+                              "PPP_1DISCON Valid,"
                               "System Current Status,"
                               "System Current Value,"
                               "12V SEPIC Status,"
@@ -239,7 +250,10 @@ def main():
             result7=testPrioPwrSW(GPIO,pinDict,x2,mbRetries) #Call the PPSW test module
             print ("=====================")
             print("Test result:",result7)
-            out_records.write(",%s" % (result7[0])) #Write the result to the file
+            out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result7[0],result7[1],result7[2], #Write the results to the file
+                                                                  result7[3],result7[4],result7[5],
+                                                                  result7[6],result7[7],result7[8],
+                                                                  result7[9],result7[10]))
             print("------------------------------\n")
             
 
@@ -321,6 +335,20 @@ def combineFrom16Bits(separate):
         k=k-1
     return combined
 
+#Enables the 3.3V SEPIC.
+#Function made since it is done so often
+def enable33SEPIC(x2,mbRetries):
+    #Enable the 3.3V SEPIC
+    print("Enabling the 3.3V SEPIC...")
+    writeResult = mbWriteRetries(x2,Reg.mbReg["33SEPIC_OF"][0],[1],retries=mbRetries) #0=off; 1=on
+    if(writeResult):
+        print("The 3.3V SEPIC was successfully enabled")
+        return True
+    else:
+        print("Enabling the 3.3V SEPIC was not successful")
+        return False
+
+
 #Used to get the PCB's serial number and ensure it is valid
 def getSN(snlen):
     #Get the SN from the user
@@ -375,13 +403,58 @@ def powerOff(GPIO,pinDict,pinValue):
 
 #Used to check the current status of the PCB's power and enable
 #power if it is off
-def powerOn(GPIO,pinDict,pinValue):
+def powerOn(GPIO,pinDict,pinValue,delay=2.0):
     if(GPIO.input(pinDict[pinValue])== 0):
         GPIO.output(pinDict[pinValue],GPIO.HIGH)
         #The sleep time of 1 works in IDLE, but not in the cmd line
         #Not sure reason, but possible execution speed is faster in cmd line
-        time.sleep(2)
+        time.sleep(delay)
     return True
+
+def prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,mbDictName,validCheck,validValue):
+    #Read the Channel Voltage
+    print("Reading Channel Voltage...")
+    readResult1 = mbReadRetries(x2,Reg.mbReg[mbDictName][0],Reg.mbReg[mbDictName][1],retries=mbRetries)
+    if(readResult1):
+        print("The channel voltage level is",readResult1[0],"\n")
+        chVoltage=readResult1[0]
+        
+        #Check if voltage is in range
+        rangeCheck=voltageRangeCheck(12.0,0.25,readResult1[0])#Expected, tolerance, test input
+        chVoltageStat=rangeCheck[0]#True if in range and False if out of range
+    else:
+        print("The channel voltage read was not successful\n")
+        chVoltage="Fail-Reading the channel voltage was not successful"
+        chVoltageStat=False
+
+    if(validCheck):#Only try if the 3.3V SEPIC was turned on successfully
+        #Read the Valid Lines
+        print("\nReading the valid lines")
+        readResult2 = mbReadRetries(x2,Reg.mbReg["Valid"][0],Reg.mbReg["Valid"][1],retries=mbRetries)
+        if(readResult2): 
+            if(readResult2[0]== validValue): #If read was successful check the correct lines are enabled
+                print("The correct valid lines were enabled")
+                chValid=readResult2[0]
+                chValidStat=True
+            else:
+                print("The incorrect valid lines were enabled")
+                chValid=readResult2[0]
+                chValidStat=False
+        else:
+            print("Reading the valid lines was not successful")
+            chValid="Fail-Reading the valid lines was not successful"
+            chValidStat=False
+    else:
+        chValidStat=False
+        chValid="Fail-Enabling 3.3V SEPIC was not successful"
+
+    #Check if the overall backup input was successful
+    if(chVoltageStat and chValidStat):
+        chStat="Pass"
+    else:
+        chStat="Fail-Channel voltage returned %s and channel valid returned %s" % (chVoltageStat,chValidStat)
+
+    return [chStat,chVoltage,chValid]
 
 #Reads the analog voltage on a MCP3008 channel
 #Also allows for a scaling value to be entered (default =1)
@@ -410,6 +483,22 @@ def splitInto16Bits(combined):
             k=k+1  
     return separate
 
+#Test if a read voltage falls in a certain range
+def voltageRangeCheck(vLevel,vThreshold,vRead):
+    #Expected voltage, tolerance, value to test
+    
+    print("Checking voltage is in range...")
+    if (vRead > vLevel-vThreshold):
+        if (vRead < vLevel+vThreshold):
+            print("Voltage is in range. It is",vRead)
+            return [True,"Pass"]
+        else:
+            print("Voltage is too high. It is",vRead)
+            return [False,"Fail-Voltage high"]
+    else:
+        print("Voltage is too low. It is",vRead)
+        return [False,"Fail-Voltage low"]    
+
 
 #-----------------------------------#
 
@@ -422,12 +511,7 @@ def test33SEPIC(GPIO,pinDict,x2,mbRetries):
     print ("Testing 3.3V SEPIC...\n")
 
     #Enable the 3.3V SEPIC
-    print("Enabling the 3.3V SEPIC...")
-    writeResult = mbWriteRetries(x2,Reg.mbReg["33SEPIC_OF"][0],[1],retries=mbRetries) #0=off; 1=on
-    if(writeResult):
-        print("The 3.3V SEPIC was successfully enabled")
-    else:
-        print("Enabling the 3.3V SEPIC was not successful")
+    if(enable33SEPIC(x2,mbRetries)== False):
         return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999]
 
     #Read the 3.3V SEPIC voltage
@@ -438,23 +522,10 @@ def test33SEPIC(GPIO,pinDict,x2,mbRetries):
     else:
         print("The 3.3V SEPIC voltage read was not successful\n")
         return ["Fail-Reading the 3.3V SEPIC voltage was not successful",-999999]
-
-    #Check if voltage is in range and return the result
-    vLevel=3.3 #expected voltage output
-    vThreshold=0.1 #tolerance on the voltage check
-    vRead=readResult[0] #read voltage level
     
-    print("Checking voltage is in range...")
-    if (vRead > vLevel-vThreshold):
-        if (vRead < vLevel+vThreshold):
-            print("Voltage is in range. It is",vRead)
-            return ["Pass",vRead]
-        else:
-            print("Voltage is too high. It is",vRead)
-            return ["Fail-Voltage high",vRead]
-    else:
-        print("Voltage is too low. It is",vRead)
-        return ["Fail-Voltage low",vRead]
+    #Check if voltage is in range and return the result
+    rangeCheck=voltageRangeCheck(3.3,0.1,readResult[0])#Expected, tolerance, test input
+    return[rangeCheck[1],readResult[0]]
 
 #Test the 3V LDO is functioning correctly
 def test3VLDO(GPIO,pinDict,spi):   
@@ -469,28 +540,69 @@ def test3VLDO(GPIO,pinDict,spi):
     print("The read voltage is",analog0,"\n")
 
     #Check if voltage is in range and return the result
-    vLevel=3 #expected voltage output
-    vThreshold=0.05 #tolerance on the voltage check
-    vRead=analog0
-    
-    print("Checking voltage is in range...")
-    if (vRead > vLevel-vThreshold):
-        if (vRead < vLevel+vThreshold):
-            print("Voltage is in range. It is",vRead)
-            return ["Pass",analog0]
-        else:
-            print("Voltage is too high. It is",vRead)
-            return ["Fail-Voltage high",vRead]
-    else:
-        print("Voltage is too low. It is",vRead)
-        return ["Fail-Voltage low",vRead]
+    rangeCheck=voltageRangeCheck(3.0,0.05,analog0)#Expected, tolerance, test input
+    return[rangeCheck[1],analog0]
 
 #Test the priority power switch is working correctly
 def testPrioPwrSW(GPIO,pinDict,x2,mbRetries):
-    powerOff(GPIO,pinDict,"IO1")
-    powerOn(GPIO,pinDict,"IO2")
+    powerOn(GPIO,pinDict,"IO3",delay=0)#Enable the backup power input
+##    powerOff(GPIO,pinDict,"IO1")#Ensure Primary input is off
+##    powerOff(GPIO,pinDict,"IO2")#Ensure Secondary input is off
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
 
-    return [""]
+    #Enable 3.3V SEPIC and set a flag on whether to test the valid lines
+    validCheck = enable33SEPIC(x2,mbRetries)
+
+    ##Test backup input
+    print("\nTesting the Backup Input...\n")
+    [bakStat,bakVoltage,bakValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"BakPwr_V",validCheck,0b100)
+
+    ##Test secondary input
+    powerOn(GPIO,pinDict,"IO2",delay=0)#Enable secondary input
+    
+    print("\nTesting the Secondary Input...\n")
+    [secStat,secVoltage,secValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"SecPwr_V",validCheck,0b110)
+
+    ##Test primary input
+    powerOn(GPIO,pinDict,"IO1",delay=0)#Enable primary input
+    
+    print("\nTesting the Primary Input...\n")
+    [priStat,priVoltage,priValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"PriPwr_V",validCheck,0b111)
+
+    ##Test PPP_1DISCON
+    print("Triggering disconnect of Primary Power...")
+
+    #Enabled the PPP_1DISCON pin to pull UV of Primary to GND
+    writeResult = mbWriteRetries(x2,Reg.mbReg["PPP_Dis"][0],[1],retries=mbRetries)#0=pri on; 1=pri off
+    if(writeResult):
+        print("The primary power has been disabled")
+        #Read the valid lines
+        readResult = mbReadRetries(x2,Reg.mbReg["Valid"][0],Reg.mbReg["Valid"][1],retries=mbRetries)
+        if(readResult):
+            PPP_DisValid=readResult[0]
+            if(readResult[0]== 0b110): #If read was successful check the correct lines are enabled
+                print("The correct valid lines were enabled")
+                PPP_DisStatus="Pass"
+            else:
+                print("The incorrect valid lines were enabled")
+                PPP_DisStatus="Fail-The incorrect valid lines were set"
+        else:
+            print("Reading the valid lines was not successful")
+            PPP_DisStatus="Fail-Reading the valid lines was not successful"
+            PPP_DisValid=-999999
+    else:
+        print("The write was not successful")
+        PPP_DisStatus="Fail-Disabling primary power failed"
+        PPP_DisValid=-999999
+    
+
+    #Disable secondary and backup inputs
+##    powerOff(GPIO,pinDict,"IO2")
+##    powerOff(GPIO,pinDict,"IO3")
+
+    return [bakStat,bakVoltage,bakValid,secStat,secVoltage,secValid,priStat,priVoltage,priValid,PPP_DisStatus,PPP_DisValid]
 
 
 #Test that the RS-485 and processor are functioning correctly
@@ -660,12 +772,7 @@ def testSDCard(GPIO,pinDict,x2,mbRetries):
     print ("=====================")
 
     #Enable the 3.3V SEPIC
-    print("Enabling the 3.3V SEPIC...")
-    writeResult = mbWriteRetries(x2,Reg.mbReg["33SEPIC_OF"][0],[1],retries=mbRetries) #0=off; 1=on
-    if(writeResult):
-        print("The 3.3V SEPIC was successfully enabled")
-    else:
-        print("Enabling the 3.3V SEPIC was not successful")
+    if(enable33SEPIC(x2,mbRetries)==False):
         return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999]
 
     #Read the SD Card Status
