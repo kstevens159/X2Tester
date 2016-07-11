@@ -83,20 +83,20 @@ def main():
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
         GPIO.setwarnings(False)
         #Define the pin numbers in a dictionary to allow easy reference
-        pin = {"IO1"       :   11,
-               "IO2"       :   13,
-               "IO3"       :   15,
-               "IO4"       :   12,
-               "TRIGGER1"  :   16,
-               "TRIGGER2"  :   18
-               }
+        pinDict = {"IO1"       :   11,
+                   "IO2"       :   13,
+                   "IO3"       :   15,
+                   "IO4"       :   12,
+                   "TRIGGER1"  :   16,
+                   "TRIGGER2"  :   18
+                  }
         #Set the GPIO directions
-        GPIO.setup(pin["IO1"], GPIO.OUT)
-        GPIO.setup(pin["IO2"], GPIO.OUT)
-        GPIO.setup(pin["IO3"], GPIO.OUT)
-        GPIO.setup(pin["IO4"], GPIO.OUT)
-        GPIO.setup(pin["TRIGGER1"], GPIO.OUT)
-        GPIO.setup(pin["TRIGGER2"], GPIO.OUT)
+        GPIO.setup(pinDict["IO1"], GPIO.OUT)
+        GPIO.setup(pinDict["IO2"], GPIO.OUT)
+        GPIO.setup(pinDict["IO3"], GPIO.OUT)
+        GPIO.setup(pinDict["IO4"], GPIO.OUT)
+        GPIO.setup(pinDict["TRIGGER1"], GPIO.OUT)
+        GPIO.setup(pinDict["TRIGGER2"], GPIO.OUT)
         
         ########################
         ## Create Output File ##
@@ -180,7 +180,7 @@ def main():
             #Test the 3V LDO
             print("\n------------------------------")
             print("Testing the 3V LDO...")
-            result1=test3VLDO(GPIO,pin,spi) #Call the 3V LDO test module
+            result1=test3VLDO(GPIO,pinDict,spi) #Call the 3V LDO test module
             print ("=====================")
             print("Test result:",result1)
             out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
@@ -189,7 +189,7 @@ def main():
             #Test the RS-485 driver, EE and processor
             print("\n------------------------------")
             print("Testing the Processor & RS-485 Modbus Communication...")
-            result2=testProcEEAndRS485(GPIO,pin,x2,mbRetries) #Call the Processor and RS-485 test module
+            result2=testProcEEAndRS485(GPIO,pinDict,x2,mbRetries) #Call the Processor and RS-485 test module
             print ("=====================")
             print("Test result:",result2)
             out_records.write(",%s,%s" % (result2[0],result2[1])) #Write the result to the file
@@ -198,7 +198,7 @@ def main():
             #Test the RTC Clock & Battery
             print("\n------------------------------")
             print("Testing the RTC Clock...")
-            result3=testRTC(GPIO,pin,x2,mbRetries) #Call the RTC Test module
+            result3=testRTC(GPIO,pinDict,x2,mbRetries) #Call the RTC Test module
             print ("=====================")
             print("Test result:",result3)
             out_records.write(",%s,%s,%s,%s" % (result3[0],result3[1],result3[2],result3[3])) #Write the result to the file
@@ -207,7 +207,7 @@ def main():
             #Test the 3.3V SEPIC Converter
             print("\n------------------------------")
             print("Testing the 3.3V SEPIC Converter...")
-            result4=test33SEPIC(GPIO,pin,x2,mbRetries) #Call the 3.3V SEPIC test module
+            result4=test33SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 3.3V SEPIC test module
             print ("=====================")
             print("Test result:",result4)
             out_records.write(",%s,%s" % (result4[0],result4[1])) #Write the result to the file
@@ -216,7 +216,7 @@ def main():
             #Test the Serial Flash
             print("\n------------------------------")
             print("Testing the Serial Flash...")
-##            result5=testSerialFlash(GPIO,pin,x2,mbRetries) #Call the serial flash test module
+##            result5=testSerialFlash(GPIO,pinDict,x2,mbRetries) #Call the serial flash test module
             print ("=====================")
 ##            print("Test result:",result5)
             print("Serial Flash test skipped")
@@ -227,10 +227,19 @@ def main():
             #Test SD Card
             print("\n------------------------------")
             print("Testing the SD Card...")
-            result6=testSDCard(GPIO,pin,x2,mbRetries) #Call the SD Card test module
+            result6=testSDCard(GPIO,pinDict,x2,mbRetries) #Call the SD Card test module
             print ("=====================")
             print("Test result:",result6)
             out_records.write(",%s" % (result6[0])) #Write the result to the file
+            print("------------------------------\n")
+
+            #Test Priority Power Switch
+            print("\n------------------------------")
+            print("Testing the Priority Power Switch...")
+            result7=testPrioPwrSW(GPIO,pinDict,x2,mbRetries) #Call the PPSW test module
+            print ("=====================")
+            print("Test result:",result7)
+            out_records.write(",%s" % (result7[0])) #Write the result to the file
             print("------------------------------\n")
             
 
@@ -239,7 +248,7 @@ def main():
             #Test the Wi-Fi module
             print("\n------------------------------")
             print("Testing the Wi-Fi Module...")
-            result999=testWifi(GPIO,pin,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
+            result999=testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
             print ("=====================")
             print("Test result:",result999)
             out_records.write(",%s" % (result999[0])) #Write the result to the file
@@ -249,10 +258,10 @@ def main():
 
 
             #Turn off the power
-            GPIO.output(pin["IO1"],GPIO.LOW)
-            GPIO.output(pin["IO2"],GPIO.LOW)
-            GPIO.output(pin["IO3"],GPIO.LOW)
-            GPIO.output(pin["IO4"],GPIO.LOW)
+            GPIO.output(pinDict["IO1"],GPIO.LOW)
+            GPIO.output(pinDict["IO2"],GPIO.LOW)
+            GPIO.output(pinDict["IO3"],GPIO.LOW)
+            GPIO.output(pinDict["IO4"],GPIO.LOW)
 
             input("The current board has finished testing and is safe to remove.\n"
                   "Press Enter to continue")
@@ -274,10 +283,10 @@ def main():
     except KeyboardInterrupt:
         out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
         out_records.close #Close the file
-        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to Primary Power
-        GPIO.output(pin["IO2"],GPIO.LOW) #Turn power off to Secondary Power
-        GPIO.output(pin["IO3"],GPIO.LOW) #Turn power off to Backup Power
-        GPIO.output(pin["IO4"],GPIO.LOW) #Turn power off to T-Node
+        GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
+        GPIO.output(pinDict["IO2"],GPIO.LOW) #Turn power off to Secondary Power
+        GPIO.output(pinDict["IO3"],GPIO.LOW) #Turn power off to Backup Power
+        GPIO.output(pinDict["IO4"],GPIO.LOW) #Turn power off to T-Node
         GPIO.cleanup() #Clean up GPIOs
         print("\n==============================\n")
         print("The program encountered an error!\n")
@@ -286,10 +295,10 @@ def main():
 ##    except:
 ##        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
 ##        out_records.close #Close the file
-##        GPIO.output(pin["IO1"],GPIO.LOW) #Turn power off to Primary Power
-##        GPIO.output(pin["IO2"],GPIO.LOW) #Turn power off to Secondary Power
-##        GPIO.output(pin["IO3"],GPIO.LOW) #Turn power off to Backup Power
-##        GPIO.output(pin["IO4"],GPIO.LOW) #Turn power off to T-Node
+##        GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
+##        GPIO.output(pinDict["IO2"],GPIO.LOW) #Turn power off to Secondary Power
+##        GPIO.output(pinDict["IO3"],GPIO.LOW) #Turn power off to Backup Power
+##        GPIO.output(pinDict["IO4"],GPIO.LOW) #Turn power off to T-Node
 ##        GPIO.cleanup() #Clean up GPIOs
 ##        print("\n==============================\n")
 ##        print("The program encountered an error!\n")
@@ -359,16 +368,16 @@ def mbWriteRetries(device,reg,value,retries=5): #(Minimalmodbus device),(Registe
 
 #Used to check the current status of the PCB's power and disable
 #power if it is on
-def power0off(GPIO,pin):
-    if(GPIO.input(pin["IO1"])== 1):
-        GPIO.output(pin["IO1"],GPIO.LOW)
+def powerOff(GPIO,pinDict,pinValue):
+    if(GPIO.input(pinDict[pinValue])== 1):
+        GPIO.output(pinDict[pinValue],GPIO.LOW)
     return True
 
 #Used to check the current status of the PCB's power and enable
 #power if it is off
-def power0on(GPIO,pin):
-    if(GPIO.input(pin["IO1"])== 0):
-        GPIO.output(pin["IO1"],GPIO.HIGH)
+def powerOn(GPIO,pinDict,pinValue):
+    if(GPIO.input(pinDict[pinValue])== 0):
+        GPIO.output(pinDict[pinValue],GPIO.HIGH)
         #The sleep time of 1 works in IDLE, but not in the cmd line
         #Not sure reason, but possible execution speed is faster in cmd line
         time.sleep(2)
@@ -405,8 +414,8 @@ def splitInto16Bits(combined):
 #-----------------------------------#
 
 #Test the 3.3V SEPIC
-def test33SEPIC(GPIO,pin,x2,mbRetries):
-    power0on(GPIO,pin)
+def test33SEPIC(GPIO,pinDict,x2,mbRetries):
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -448,8 +457,8 @@ def test33SEPIC(GPIO,pin,x2,mbRetries):
         return ["Fail-Voltage low",vRead]
 
 #Test the 3V LDO is functioning correctly
-def test3VLDO(GPIO,pin,spi):   
-    power0on(GPIO,pin)
+def test3VLDO(GPIO,pinDict,spi):   
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -476,10 +485,17 @@ def test3VLDO(GPIO,pin,spi):
         print("Voltage is too low. It is",vRead)
         return ["Fail-Voltage low",vRead]
 
+#Test the priority power switch is working correctly
+def testPrioPwrSW(GPIO,pinDict,x2,mbRetries):
+    powerOff(GPIO,pinDict,"IO1")
+    powerOn(GPIO,pinDict,"IO2")
+
+    return [""]
+
 
 #Test that the RS-485 and processor are functioning correctly
-def testProcEEAndRS485(GPIO,pin,x2,mbRetries):
-    power0on(GPIO,pin)
+def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -507,10 +523,10 @@ def testProcEEAndRS485(GPIO,pin,x2,mbRetries):
         #Cycle the power to confirm address is written to and can be read from EE
         print("\nTesting EE Chip")
         print("Power cycling to confirm EE works...")
-        power0off(GPIO,pin)
+        powerOff(GPIO,pinDict,"IO1")
         print("Power off.\nWaiting 1 second")
         time.sleep(1)
-        power0on(GPIO,pin)
+        powerOn(GPIO,pinDict,"IO1")
         print("Power on")
 
         #Read address and confirm it is still 2 after the power cycle
@@ -554,8 +570,8 @@ def testProcEEAndRS485(GPIO,pin,x2,mbRetries):
             return ["Fail-Writing address was not successful","Pass"] #Assume EE is OK, since address started as a non default value (1)
 
 #Test RTC Battery Functionality
-def testRTC(GPIO,pin,x2,mbRetries):
-    power0on(GPIO,pin)
+def testRTC(GPIO,pinDict,x2,mbRetries):
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -598,11 +614,11 @@ def testRTC(GPIO,pin,x2,mbRetries):
 
             #Check if the board keeps time on a power cycle
             print("Cycling Power to board...")
-            power0off(GPIO,pin)
+            powerOff(GPIO,pinDict,"IO1")
             print("Waiting 1 seconds...")
             time.sleep(1)
             print("Turning board back on and checking time is accurate\n")
-            power0on(GPIO,pin)
+            powerOn(GPIO,pinDict,"IO1")
 
             #Read the boards current time
             print("Reading Time from X2...")
@@ -637,11 +653,20 @@ def testRTC(GPIO,pin,x2,mbRetries):
     return [RTCVoltageResult,RTCVoltageReadResult[0],timeDiffResult,timeDiff]
 
 #Test SD Card is working
-def testSDCard(GPIO,pin,x2,mbRetries):
-    power0on(GPIO,pin)
+def testSDCard(GPIO,pinDict,x2,mbRetries):
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
+
+    #Enable the 3.3V SEPIC
+    print("Enabling the 3.3V SEPIC...")
+    writeResult = mbWriteRetries(x2,Reg.mbReg["33SEPIC_OF"][0],[1],retries=mbRetries) #0=off; 1=on
+    if(writeResult):
+        print("The 3.3V SEPIC was successfully enabled")
+    else:
+        print("Enabling the 3.3V SEPIC was not successful")
+        return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999]
 
     #Read the SD Card Status
     print("Reading SD Card Status...")
@@ -665,8 +690,8 @@ def testSDCard(GPIO,pin,x2,mbRetries):
     
 
 #Test the Wi-Fi module is operating correctly
-def testWifi(GPIO,pin,x2,mbRetries,wifiNetwork,wifiRetries):
-    power0on(GPIO,pin)
+def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
