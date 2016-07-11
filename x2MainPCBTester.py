@@ -251,12 +251,19 @@ def main():
             print ("=====================")
             print("Test result:",result7)
             out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result7[0],result7[1],result7[2], #Write the results to the file
-                                                                  result7[3],result7[4],result7[5],
-                                                                  result7[6],result7[7],result7[8],
-                                                                  result7[9],result7[10]))
+                                                                     result7[3],result7[4],result7[5],
+                                                                     result7[6],result7[7],result7[8],
+                                                                     result7[9],result7[10]))
             print("------------------------------\n")
             
-
+            #Test System Current
+            print("\n------------------------------")
+            print("Testing the System Current...")
+            result8=testSysCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
+            print ("=====================")
+            print("Test result:",result7)
+            out_records.write(",%s" % (result7[0])) #Write the result to the file
+            print("------------------------------\n")
             
 
             #Test the Wi-Fi module
@@ -295,7 +302,7 @@ def main():
         GPIO.cleanup()
 
     except KeyboardInterrupt:
-        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
+        out_records.write(",KEYBOARD INTERRUPT ERROR\n")#Line return to go to next record
         out_records.close #Close the file
         GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
         GPIO.output(pinDict["IO2"],GPIO.LOW) #Turn power off to Secondary Power
@@ -320,6 +327,7 @@ def main():
 ##        input("Press Enter to exit")
 
 
+
 ###############
 ## Functions ##
 ###############
@@ -336,8 +344,7 @@ def combineFrom16Bits(separate):
     return combined
 
 #Enables the 3.3V SEPIC.
-#Function made since it is done so often
-def enable33SEPIC(x2,mbRetries):
+def enable33SEPIC(x2,mbRetries):#Function made since it is done so often
     #Enable the 3.3V SEPIC
     print("Enabling the 3.3V SEPIC...")
     writeResult = mbWriteRetries(x2,Reg.mbReg["33SEPIC_OF"][0],[1],retries=mbRetries) #0=off; 1=on
@@ -411,16 +418,17 @@ def powerOn(GPIO,pinDict,pinValue,delay=2.0):
         time.sleep(delay)
     return True
 
+#Tests the voltage and valid line status for a power input channel
 def prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,mbDictName,validCheck,validValue):
     #Read the Channel Voltage
     print("Reading Channel Voltage...")
     readResult1 = mbReadRetries(x2,Reg.mbReg[mbDictName][0],Reg.mbReg[mbDictName][1],retries=mbRetries)
     if(readResult1):
-        print("The channel voltage level is",readResult1[0],"\n")
-        chVoltage=readResult1[0]
+        chVoltage=combineFrom16Bits(readResult1)
+        print("The channel voltage level is",chVoltage,"\n")
         
         #Check if voltage is in range
-        rangeCheck=voltageRangeCheck(12.0,0.25,readResult1[0])#Expected, tolerance, test input
+        rangeCheck=valueRangeCheck(12.0,0.25,chVoltage)#Expected, tolerance, test input
         chVoltageStat=rangeCheck[0]#True if in range and False if out of range
     else:
         print("The channel voltage read was not successful\n")
@@ -448,7 +456,7 @@ def prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,mbDictName,validCheck,validValu
         chValidStat=False
         chValid="Fail-Enabling 3.3V SEPIC was not successful"
 
-    #Check if the overall backup input was successful
+    #Check if the overall input was successful
     if(chVoltageStat and chValidStat):
         chStat="Pass"
     else:
@@ -484,20 +492,20 @@ def splitInto16Bits(combined):
     return separate
 
 #Test if a read voltage falls in a certain range
-def voltageRangeCheck(vLevel,vThreshold,vRead):
-    #Expected voltage, tolerance, value to test
+def valueRangeCheck(level,threshold,read):
+    #Expected value, tolerance, input to test
     
-    print("Checking voltage is in range...")
-    if (vRead > vLevel-vThreshold):
-        if (vRead < vLevel+vThreshold):
-            print("Voltage is in range. It is",vRead)
+    print("Checking reading is in range...")
+    if (read > level-threshold):
+        if (read < level+threshold):
+            print("Reading is in range. It is",read)
             return [True,"Pass"]
         else:
-            print("Voltage is too high. It is",vRead)
-            return [False,"Fail-Voltage high"]
+            print("Reading is too high. It is",read)
+            return [False,"Fail-Reading high"]
     else:
-        print("Voltage is too low. It is",vRead)
-        return [False,"Fail-Voltage low"]    
+        print("Reading is too low. It is",read)
+        return [False,"Fail-Reading low"]    
 
 
 #-----------------------------------#
@@ -524,7 +532,7 @@ def test33SEPIC(GPIO,pinDict,x2,mbRetries):
         return ["Fail-Reading the 3.3V SEPIC voltage was not successful",-999999]
     
     #Check if voltage is in range and return the result
-    rangeCheck=voltageRangeCheck(3.3,0.1,readResult[0])#Expected, tolerance, test input
+    rangeCheck=valueRangeCheck(3.3,0.1,readResult[0])#Expected, tolerance, test input
     return[rangeCheck[1],readResult[0]]
 
 #Test the 3V LDO is functioning correctly
@@ -540,7 +548,7 @@ def test3VLDO(GPIO,pinDict,spi):
     print("The read voltage is",analog0,"\n")
 
     #Check if voltage is in range and return the result
-    rangeCheck=voltageRangeCheck(3.0,0.05,analog0)#Expected, tolerance, test input
+    rangeCheck=valueRangeCheck(3.0,0.05,analog0)#Expected, tolerance, test input
     return[rangeCheck[1],analog0]
 
 #Test the priority power switch is working correctly
@@ -690,7 +698,7 @@ def testRTC(GPIO,pinDict,x2,mbRetries):
   
     #Read the RTC Voltage
     print("Reading the RTC Voltage...")
-    RTCVoltageReadResult = mbReadRetries(x2,Reg.mbReg["RTCBAT"][0],Reg.mbReg["RTCBAT"][1],retries=mbRetries)
+    RTCVoltageReadResult = mbReadRetries(x2,Reg.mbReg["RTCBAT_V"][0],Reg.mbReg["RTCBAT_V"][1],retries=mbRetries)
     if(RTCVoltageReadResult):
         print("The RTC Battery voltage is",RTCVoltageReadResult[0],"\n")
         if(RTCVoltageReadResult[0]>2.8 and RTCVoltageReadResult[0]<3.2):
@@ -701,7 +709,7 @@ def testRTC(GPIO,pinDict,x2,mbRetries):
             RTCVoltageResult="Fail-Voltage out of range"
     else:
         print("The RTC Battery voltage read was not successful\n")
-        RTCVoltageReadResult=-999999
+        RTCVoltageReadResult=[-999999]
         RTCVoltageResult="Fail-Voltage read not successful"
 
     #Read the current time
@@ -792,9 +800,28 @@ def testSDCard(GPIO,pinDict,x2,mbRetries):
         print("The read was not successful")
         return ["Fail-The Modbus read failed. No status received"]
 
+#Test that the system current is reading correctly
+def testSysCur(GPIO,pinDict,x2,mbRetries):
+    powerOn(GPIO,pinDict,"IO1")
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
 
+    #Enable the 3.3V SEPIC
+    if(enable33SEPIC(x2,mbRetries)== False):
+        return ["Fail-Enabling the 3.3V SEPIC was not successful"]
 
-    
+    #Read system current
+    print("Reading the system current...")
+    readResult = mbReadRetries(x2,Reg.mbReg["SysCur"][0],Reg.mbReg["SysCur"][1],retries=mbRetries)
+    if(readResult):
+        curr=combineFrom16Bits(readResult)
+        currentLevel=valueRangeCheck(150,10,curr)
+    else:
+        print("The read was not successful")
+        return ["Fail-The Modbus read failed"]
+
+    return [currentLevel[1]]
 
 #Test the Wi-Fi module is operating correctly
 def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
