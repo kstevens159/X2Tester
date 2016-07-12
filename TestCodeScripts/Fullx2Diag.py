@@ -77,15 +77,13 @@ def main():
         x2.serial.stopbits = stopbits
         x2.serial.timeout = modbusTimeout
         minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
-##        x2.debug=True
+        x2.debug=True
 
         ##Define GPIO Interface
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
         GPIO.setwarnings(False)
         #Define the pin numbers in a dictionary to allow easy reference
         pinDict = {"IO1"        :   11,
-##                   "IO2"        :   11, #Used for testing
-##                   "IO3"        :   11, #Used for testing
                    "IO2"        :   13,
                    "IO3"        :   15,
                    "IO4"        :   12,
@@ -100,226 +98,21 @@ def main():
         GPIO.setup(pinDict["TRIGGER1"], GPIO.OUT)
         GPIO.setup(pinDict["TRIGGER2"], GPIO.OUT)
         
-        ########################
-        ## Create Output File ##
-        ########################
-
-        #Check if folder is there and if not make
-        os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
-        #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
-        name = "PCBTestResults.csv"
-        date = datetime.datetime.now().strftime("%Y.%m.%d")
-        filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
-
-        #Open the file
+        ##Functions
+        powerOn(x2,mbRetries,GPIO,pinDict,"IO1",delay=2.0)
+##        time.sleep(2)
+##        readResult1 = mbReadRetries(x2,Reg.mbReg["ReadTime"][0],Reg.mbReg["ReadTime"][1],retries=mbRetries)
+##        print(readResult1)
         
-        if(os.path.isfile(filename)):   #If the file exists append it
-            out_records=open(filename, 'a')
-        else:                           #If the file doesn't exist create it and add section headers
-            out_records=open(filename, 'w')
-            out_records.write("Serial Number,"
-                              "3V LDO Status,"
-                              "3V LDO Voltage,"
-                              "Processor & Host RS-485 Status,"
-                              "EE Chip Status,"
-                              "RTC Battery Read Status,"
-                              "RTC Battery Read Voltage,"
-                              "RTC Clock Retention Status,"
-                              "RTC Clock Retention Difference,"                              
-                              "3.3V SEPIC Status,"
-                              "3.3V SEPIC Voltage,"
-                              "Serial Flash Status,"
-                              "SD Card Status,"
-                              "Backup Power Switch Status,"
-                              "Backup Power Voltage,"
-                              "Backup Valid,"
-                              "Secondary Power Switch Status,"
-                              "Secondary Power Voltage,"
-                              "Secondary Valid,"
-                              "Primary Power Switch Status,"
-                              "Primary Power Voltage,"
-                              "Primary Valid,"
-                              "PPP_1DISCON Status,"
-                              "PPP_1DISCON Valid,"
-                              "System Current Status,"
-                              "System Current Value,"
-                              "12V SEPIC Status,"
-                              "5V LDO Status,"
-                              "5V LDO Voltage,"
-                              "12V Sensor Power Switch A Status,"
-                              "12V Sensor Power Switch A Voltage,"
-                              "12V Sensor Power Switch B Status,"
-                              "12V Sensor Power Switch B Voltage,"
-                              "12V Sensor Power Switch C Status,"
-                              "12V Sensor Power Switch C Voltage,"
-                              "12V Sensor Power Switch D Status,"
-                              "12V Sensor Power Switch D Voltage,"
-                              "12V Sensor Current Status,"
-                              "12V Sensor Current Value,"
-                              "Priority Power Output 1 Status,"
-                              "Priority Power Output 1 Voltage,"
-                              "Priority Power Output 2 Status,"
-                              "Priority Power Output 2 Voltage,"
-                              "Wi-Fi Network Status,"
-                              "Wi-Fi Communication Status,"                               
-                              "RS-485 Sensor A,"
-                              "RS-485 Sensor B,"
-                              "RS-485 Sensor C,"
-                              "RS-232 Sensor A,"
-                              "RS-232 Sensor B,"
-                              "RS-232 Sensor C,"
-                              "SDI-12 Sensor A,"
-                              "SDI-12 Sensor B,"
-                              "SDI-12 Sensor C,"
-                              "Magnetic Switch Status,"
-                              "Pressure/Temp/Humidity Chip Status,"
-                              "Passthrough RS-485 Status,"
-                              "Trigger 1 Status,"
-                              "Trigger 2 Status,"
-                              "\n")
-
-
-        ###################
-        ## PCB Test Loop ##
-        ###################
-
-        ##Continually loop through the test process to allow the user to test a batch of PCBs
-        sn = getSN(snlen)
-        while (sn != "-1"): #Loop through all PCBs to be tested
-            out_records.write("%s" % sn) #Write serial number to file
-
-            #Test the 3V LDO
-            print("\n------------------------------")
-            print("Testing the 3V LDO...")
-            result1=test3VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 3V LDO test module
-            print ("=====================")
-            print("Test result:",result1)
-            out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
-            print("------------------------------\n")
-
-            #Test the RS-485 driver, EE and processor
-            print("\n------------------------------")
-            print("Testing the Processor & RS-485 Modbus Communication...")
-            result2=testProcEEAndRS485(GPIO,pinDict,x2,mbRetries) #Call the Processor and RS-485 test module
-            print ("=====================")
-            print("Test result:",result2)
-            out_records.write(",%s,%s" % (result2[0],result2[1])) #Write the result to the file
-            print("------------------------------\n")
-
-            #Test the RTC Clock & Battery
-            print("\n------------------------------")
-            print("Testing the RTC Clock...")
-            result3=testRTC(GPIO,pinDict,x2,mbRetries) #Call the RTC Test module
-            print ("=====================")
-            print("Test result:",result3)
-            out_records.write(",%s,%s,%s,%s" % (result3[0],result3[1],result3[2],result3[3])) #Write the result to the file
-            print("------------------------------\n")
-
-            #Test the 3.3V SEPIC Converter
-            print("\n------------------------------")
-            print("Testing the 3.3V SEPIC Converter...")
-            result4=test33SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 3.3V SEPIC test module
-            print ("=====================")
-            print("Test result:",result4)
-            out_records.write(",%s,%s" % (result4[0],result4[1])) #Write the result to the file
-            print("------------------------------\n")
-
-            #Test the Serial Flash
-            print("\n------------------------------")
-            print("Testing the Serial Flash...")
-##            result5=testSerialFlash(GPIO,pinDict,x2,mbRetries) #Call the serial flash test module
-            print ("=====================")
-##            print("Test result:",result5)
-            print("Serial Flash test skipped")
-##            out_records.write(",%s,%s" % (result5[0])) #Write the result to the file
-            out_records.write(",Not tested")
-            print("------------------------------\n")
-
-            #Test SD Card
-            print("\n------------------------------")
-            print("Testing the SD Card...")
-            result6=testSDCard(GPIO,pinDict,x2,mbRetries) #Call the SD Card test module
-            print ("=====================")
-            print("Test result:",result6)
-            out_records.write(",%s" % (result6[0])) #Write the result to the file
-            print("------------------------------\n")
-
-            #Test Priority Power Switch
-            print("\n------------------------------")
-            print("Testing the Priority Power Switch...")
-            result7=testPrioPwrSW(GPIO,pinDict,x2,mbRetries) #Call the PPSW test module
-            print ("=====================")
-            print("Test result:",result7)
-            out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result7[0],result7[1],result7[2], #Write the results to the file
-                                                                     result7[3],result7[4],result7[5],
-                                                                     result7[6],result7[7],result7[8],
-                                                                     result7[9],result7[10]))
-            print("------------------------------\n")
-            
-            #Test System Current
-            print("\n------------------------------")
-            print("Testing the System Current...")
-            result8=testSysCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
-            print ("=====================")
-            print("Test result:",result8)
-            out_records.write(",%s,%s" % (result8[0],result8[1])) #Write the result to the file
-            print("------------------------------\n")
-
-            #Test the 12V SEPIC Converter
-            print("\n------------------------------")
-            print("Testing the 12V SEPIC Converter...")
-            result9=test12SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 12V SEPIC test module
-            print ("=====================")
-            print("Test result:",result9)
-            out_records.write(",%s,%s" % (result9[0],result9[1])) #Write the result to the file
-            print("------------------------------\n")
-
-            
-            
-
-            #Test the Wi-Fi module
-            print("\n------------------------------")
-            print("Testing the Wi-Fi Module...")
-            result999=testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
-            print ("=====================")
-            print("Test result:",result999)
-            out_records.write(",%s" % (result999[0])) #Write the result to the file
-            print("------------------------------\n")
-
-
-
-
-            #Turn off the power
-            GPIO.output(pinDict["IO1"],GPIO.LOW)
-            GPIO.output(pinDict["IO2"],GPIO.LOW)
-            GPIO.output(pinDict["IO3"],GPIO.LOW)
-            GPIO.output(pinDict["IO4"],GPIO.LOW)
-
-            input("The current board has finished testing and is safe to remove.\n"
-                  "Please remember to remove the SD Card\n\n"
-                  "Press Enter to continue\n")
-            print("----------------------------------------------")
-            print("Board SN:",sn,"Done")
-            print("----------------------------------------------\n\n")
-
-            #Prepare for next board
-            out_records.write("\n")#Line return to go to next record
-            out_records.flush()
-            sn = getSN(snlen) #Get new board SN
 
     #Define operation when an exception occurs
     except KeyboardInterrupt:
-        out_records.write(",KEYBOARD INTERRUPT ERROR\n")#Line return to go to next record
-        out_records.flush()        
+        GPIO.cleanup() #Clean up GPIOs
         print("\n==============================\n")
         print("The program was cancelled by a keyboard interrupt!\n")
         print("==============================\n")
         input("Press Enter to exit\n")
     except Exception as error:
-        out_records.write(",PROGRAM ERROR,")
-        out_records.write(str(error))
-        out_records.write("\n")#Line return to go to next record
-        out_records.flush()
         print("\n==============================\n")
         print("The program encountered the following error!\n")
         print("Error Type: ", type(error))
@@ -329,11 +122,10 @@ def main():
         input("Press Enter to exit\n")
     finally:
         print("Cleaning up and exiting...")
-        out_records.close #Close the file
-        GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
-        GPIO.output(pinDict["IO2"],GPIO.LOW) #Turn power off to Secondary Power
-        GPIO.output(pinDict["IO3"],GPIO.LOW) #Turn power off to Backup Power
-        GPIO.output(pinDict["IO4"],GPIO.LOW) #Turn power off to T-Node
+##        GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
+##        GPIO.output(pinDict["IO2"],GPIO.LOW) #Turn power off to Secondary Power
+##        GPIO.output(pinDict["IO3"],GPIO.LOW) #Turn power off to Backup Power
+##        GPIO.output(pinDict["IO4"],GPIO.LOW) #Turn power off to T-Node
         GPIO.cleanup() #Clean up GPIOs
 
 
@@ -419,22 +211,6 @@ def getSN(snlen):
     return sn
 
 #This function is used to gracefully handle failed reads and allow retries 
-def mbReadFloatRetries(device,reg,numReg=2,retries=5): #(Minimalmodbus device),(Register address),(Number of registers to read),(Retry attempts)
-    for i in range (0,retries):
-        try:
-            device.serial.flushInput() #clear serial buffer before reading
-            result=device.read_float(reg,functioncode=4,numberOfRegisters=numReg)
-            result=round(result,3)
-            break #if it gets past the read without causing an exception exit the loop as the read was successful
-        except:
-            print("Reading",i,"Failed")
-            pass #Continue running the code without exiting the program if the read was not successful
-    else: #If it exits normally that means it failed every time
-        return False
-    return [result]
-#Returns False if it fails and the read values if successful
-
-#This function is used to gracefully handle failed reads and allow retries 
 def mbReadRetries(device,reg,numReg=1,retries=5): #(Minimalmodbus device),(Register address),(Number of registers to read),(Retry attempts)
     for i in range (0,retries):
         try:
@@ -468,32 +244,26 @@ def mbWriteRetries(device,reg,value,retries=5): #(Minimalmodbus device),(Registe
 def powerOff(GPIO,pinDict,pinValue):
     if(GPIO.input(pinDict[pinValue])== 1):
         GPIO.output(pinDict[pinValue],GPIO.LOW)
-        time.sleep(5)
     return True
 
 #Used to check the current status of the PCB's power and enable
 #power if it is off
-def powerOn(x2,mbRetries,GPIO,pinDict,pinValue,delay=3.0):
+def powerOn(x2,mbRetries,GPIO,pinDict,pinValue,delay=2.0):
     if(GPIO.input(pinDict[pinValue])== 0):
         GPIO.output(pinDict[pinValue],GPIO.HIGH)
         #The sleep time of 1 works in IDLE, but not in the cmd line
         #Not sure reason, but possible execution speed is faster in cmd line
         time.sleep(delay)
-
         enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)#Turn off the Wi-Fi so it doesn't interfere on the RS-485 bus
-##        input("Enter someting")
-##        powerOff(GPIO,pinDict,"IO1")
-##        input("Enter something")
-##        GPIO.output(pinDict[pinValue],GPIO.HIGH)
     return True
 
 #Tests the voltage and valid line status for a power input channel
 def prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,mbDictName,validCheck,validValue):
     #Read the Channel Voltage
     print("Reading Channel Voltage...")
-    readResult1 = mbReadFloatRetries(x2,Reg.mbReg[mbDictName][0],Reg.mbReg[mbDictName][1],retries=mbRetries)
+    readResult1 = mbReadRetries(x2,Reg.mbReg[mbDictName][0],Reg.mbReg[mbDictName][1],retries=mbRetries)
     if(readResult1):
-        chVoltage=readResult1[0]
+        chVoltage=combineFrom16Bits(readResult1)
         print("The channel voltage level is",chVoltage,"\n")
         
         #Check if voltage is in range
@@ -581,7 +351,7 @@ def valueRangeCheck(level,threshold,read):
 
 #Test the 12V SEPIC
 def test12SEPIC(GPIO,pinDict,x2,mbRetries):
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -593,21 +363,22 @@ def test12SEPIC(GPIO,pinDict,x2,mbRetries):
 
     #Read the 12V SEPIC voltage
     print("Reading 12V SEPIC Voltage...")
-    readResult = mbReadFloatRetries(x2,Reg.mbReg["12VSen_V"][0],Reg.mbReg["12VSen_V"][1],retries=mbRetries)
+    readResult = mbReadRetries(x2,Reg.mbReg["12VSen_V"][0],Reg.mbReg["12VSen_V"][1],retries=mbRetries)
     if(readResult):
-        print("The 12V SEPIC voltage level is",readResult[0],"\n")
+        voltage = combineFrom16Bits(readResult)
+        print("The 12V SEPIC voltage level is",voltage,"\n")
 
         #Check if voltage is in range and return the result
-        rangeCheck=valueRangeCheck(12,0.25,readResult[0])#Expected, tolerance, test input
+        rangeCheck=valueRangeCheck(12,0.25,voltage)#Expected, tolerance, test input
 
-        return[rangeCheck[1],readResult[0]]
+        return[rangeCheck[1],voltage]
     else:
         print("The 12V SEPIC voltage read was not successful\n")
         return ["Fail-Reading the 12V SEPIC voltage was not successful",-999999]
     
 #Test the 3.3V SEPIC
 def test33SEPIC(GPIO,pinDict,x2,mbRetries):
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -619,21 +390,22 @@ def test33SEPIC(GPIO,pinDict,x2,mbRetries):
 
     #Read the 3.3V SEPIC voltage
     print("Reading 3.3V SEPIC Voltage...")
-    readResult = mbReadFloatRetries(x2,Reg.mbReg["VCC33_V"][0],Reg.mbReg["VCC33_V"][1],retries=mbRetries)
+    readResult = mbReadRetries(x2,Reg.mbReg["VCC33_V"][0],Reg.mbReg["VCC33_V"][1],retries=mbRetries)
     if(readResult):
-        print("The 3.3V SEPIC voltage level is",readResult[0],"\n")
+        voltage = combineFrom16Bits(readResult)
+        print("The 3.3V SEPIC voltage level is",voltage,"\n")
 
         #Check if voltage is in range and return the result
-        rangeCheck=valueRangeCheck(3.3,0.1,readResult[0])#Expected, tolerance, test input
+        rangeCheck=valueRangeCheck(3.3,0.1,voltage)#Expected, tolerance, test input
 
-        return[rangeCheck[1],readResult[0]]
+        return[rangeCheck[1],voltage]
     else:
         print("The 3.3V SEPIC voltage read was not successful\n")
         return ["Fail-Reading the 3.3V SEPIC voltage was not successful",-999999]
 
 #Test the 3V LDO is functioning correctly
-def test3VLDO(GPIO,pinDict,x2,mbRetries,spi):   
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+def test3VLDO(GPIO,pinDict,spi):   
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -650,8 +422,7 @@ def test3VLDO(GPIO,pinDict,x2,mbRetries,spi):
 
 #Test the priority power switch is working correctly
 def testPrioPwrSW(GPIO,pinDict,x2,mbRetries):
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO3",delay=0)#Enable the backup power input
-    time.sleep(1)
+    powerOn(GPIO,pinDict,"IO3",delay=0)#Enable the backup power input
     powerOff(GPIO,pinDict,"IO1")#Ensure Primary input is off
     powerOff(GPIO,pinDict,"IO2")#Ensure Secondary input is off
     print ("=====================")
@@ -666,13 +437,13 @@ def testPrioPwrSW(GPIO,pinDict,x2,mbRetries):
     [bakStat,bakVoltage,bakValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"BakPwr_V",validCheck,0b100)
 
     ##Test secondary input
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO2",delay=0)#Enable secondary input
+    powerOn(GPIO,pinDict,"IO2",delay=0)#Enable secondary input
     
     print("\nTesting the Secondary Input...\n")
     [secStat,secVoltage,secValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"SecPwr_V",validCheck,0b110)
 
     ##Test primary input
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1",delay=0)#Enable primary input
+    powerOn(GPIO,pinDict,"IO1",delay=0)#Enable primary input
     
     print("\nTesting the Primary Input...\n")
     [priStat,priVoltage,priValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"PriPwr_V",validCheck,0b111)
@@ -713,7 +484,7 @@ def testPrioPwrSW(GPIO,pinDict,x2,mbRetries):
 
 #Test that the RS-485 and processor are functioning correctly
 def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -744,7 +515,7 @@ def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
         powerOff(GPIO,pinDict,"IO1")
         print("Power off.\nWaiting 1 second")
         time.sleep(1)
-        powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+        powerOn(GPIO,pinDict,"IO1")
         print("Power on")
 
         #Read address and confirm it is still 2 after the power cycle
@@ -789,16 +560,16 @@ def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
 
 #Test RTC Battery Functionality
 def testRTC(GPIO,pinDict,x2,mbRetries):
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
   
     #Read the RTC Voltage
     print("Reading the RTC Voltage...")
-    RTCRawResult = mbReadFloatRetries(x2,Reg.mbReg["RTCBAT_V"][0],Reg.mbReg["RTCBAT_V"][1],retries=mbRetries)
+    RTCRawResult = mbReadRetries(x2,Reg.mbReg["RTCBAT_V"][0],Reg.mbReg["RTCBAT_V"][1],retries=mbRetries)
     if(RTCRawResult):
-        RTCVoltageValueResult = RTCRawResult[0]
+        RTCVoltageValueResult = combineFrom16Bits(RTCRawResult)
         print("The RTC Battery voltage is",RTCVoltageValueResult,"\n")
         [rangeCheck,RTCVoltageRangeResult]=valueRangeCheck(3.0,0.2,RTCVoltageValueResult)
     else:
@@ -833,7 +604,7 @@ def testRTC(GPIO,pinDict,x2,mbRetries):
             print("Waiting 1 seconds...")
             time.sleep(1)
             print("Turning board back on and checking time is accurate\n")
-            powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+            powerOn(GPIO,pinDict,"IO1")
 
             #Read the boards current time
             print("Reading Time from X2...")
@@ -869,7 +640,7 @@ def testRTC(GPIO,pinDict,x2,mbRetries):
 
 #Test SD Card is working
 def testSDCard(GPIO,pinDict,x2,mbRetries):
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -885,7 +656,7 @@ def testSDCard(GPIO,pinDict,x2,mbRetries):
 
 #Test that the system current is reading correctly
 def testSysCur(GPIO,pinDict,x2,mbRetries):
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
@@ -908,14 +679,12 @@ def testSysCur(GPIO,pinDict,x2,mbRetries):
 
 #Test the Wi-Fi module is operating correctly
 def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(GPIO,pinDict,"IO1")
     print ("=====================")
     print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
     print ("=====================")
 
-    #NEED TO TEST COMMUINICATION
-
-    enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",1)
+    #NEED TO TURN ON WIFI SWITCH
 
     searchString=wifiNetwork
     retries=wifiRetries
@@ -933,7 +702,6 @@ def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
             else:
                 done=False
         if(done):
-            enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
             return ["Pass"]
         else:
             print("Failed to find a network with", searchString, "in it on attempt", i+1, "of", retries)
@@ -942,7 +710,6 @@ def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
                 time.sleep(sleepSec)
             else:
                 print("Failed to find X2 network")
-                enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
                 return ["Fail-Network not found"]
 
 #This function replaces the standard minimalmodbus address range (0-247) with an extended range (0-255)

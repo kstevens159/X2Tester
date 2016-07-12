@@ -32,8 +32,8 @@
 #     { "Key"               :[(Register #), (# of Registers),  (Function Code) ]
 mbReg={ "Add"               :[0x1000,              1,                  4       ]#Reg1:Address
         ,"RTCBAT_V"         :[0x750E,              2,                  16      ]#Reg1: Upper word of float; Reg2: Lower word of float
-        ,"SetTime"          :[0x001C,              1,                  16      ]#Reg1:Top of UTC Time; Reg2: Bottom of UTC Time; Reg3: Top of TZ Offset; Reg4: Bottom of TZ Offset
-        ,"ReadTime"         :[0x001C,              1,                  4       ]#Reg1:Top of UTC Time; Reg2: Bottom of UTC Time; Reg3: Top of TZ Offset; Reg4: Bottom of TZ Offset
+        ,"SetTime"          :[0x701C,              4,                  16      ]#Reg1:Top of UTC Time; Reg2: Bottom of UTC Time; Reg3: Top of TZ Offset; Reg4: Bottom of TZ Offset
+        ,"ReadTime"         :[0x701C,              4,                  4       ]#Reg1:Top of UTC Time; Reg2: Bottom of UTC Time; Reg3: Top of TZ Offset; Reg4: Bottom of TZ Offset
         ,"33SEPIC_OF"       :[0x7500,              1,                  16      ]#Reg1: 0=off; 1=on
         ,"VCC33_V"          :[0x750C,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
         ,"SDTest"           :[0x7524,              1,                  4       ]#Reg1: 0=write/read fail; 1=write/read success
@@ -42,7 +42,7 @@ mbReg={ "Add"               :[0x1000,              1,                  4       ]
         ,"BakPwr_V"         :[0x7514,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
         ,"Valid"            :[0x751C,              1,                  4       ]#Reg1: Bit mask(Bit0=Valid1;Bit1=Valid2;Bit2=Valid3) [EX. 0b000=All off; 0b001=Valid1 on; 0b011=Valid1&2 on; 0b111=All on]
         ,"PPP_Dis"          :[0x750B,              1,                  16      ]#Reg1: 0=off; 1=on
-        ,"SysCur"           :[0x7519,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
+        ,"SysCur"           :[0x7518,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
         ,"12SEPIC_OF"       :[0x7501,              1,                  16      ]#Reg1: 0=off; 1=on
         ,"12VSen_V"         :[0x7516,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
         ,"5VLDO_OF"         :[0x7502,              1,                  16      ]#Reg1: 0=off; 1=on
