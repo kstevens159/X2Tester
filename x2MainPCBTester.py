@@ -107,7 +107,7 @@ def main():
         #Check if folder is there and if not make
         os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
         #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
-        name = "PCBTestResults.txt"
+        name = "PCBTestResults.csv"
         date = datetime.datetime.now().strftime("%Y.%m.%d")
         filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
 
@@ -261,8 +261,8 @@ def main():
             print("Testing the System Current...")
             result8=testSysCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
             print ("=====================")
-            print("Test result:",result7)
-            out_records.write(",%s" % (result7[0])) #Write the result to the file
+            print("Test result:",result8)
+            out_records.write(",%s,%s" % (result8[0],result8[1])) #Write the result to the file
             print("------------------------------\n")
             
 
@@ -285,7 +285,8 @@ def main():
             GPIO.output(pinDict["IO4"],GPIO.LOW)
 
             input("The current board has finished testing and is safe to remove.\n"
-                  "Press Enter to continue")
+                  "Please remember to remove the SD Card\n\n"
+                  "Press Enter to continue\n")
             print("----------------------------------------------")
             print("Board SN:",sn,"Done")
             print("----------------------------------------------\n\n")
@@ -295,36 +296,34 @@ def main():
             out_records.flush()
             sn = getSN(snlen) #Get new board SN
 
-        #close the file
-        out_records.close
-
-        #Clean up GPIOs
-        GPIO.cleanup()
-
+    #Define operation when an exception occurs
     except KeyboardInterrupt:
         out_records.write(",KEYBOARD INTERRUPT ERROR\n")#Line return to go to next record
+        GPIO.cleanup() #Clean up GPIOs
+        print("\n==============================\n")
+        print("The program was cancelled by a keyboard interrupt!\n")
+        print("==============================\n")
+        input("Press Enter to exit")
+    except Exception as error:
+        out_records.write(",PROGRAM ERROR,")
+        out_records.write(str(error))
+        out_records.write("\n")#Line return to go to next record
+        out_records.flush()
+        print("\n==============================\n")
+        print("The program encountered the following error!\n")
+        print("Error Type: ", type(error))
+        print(error.args)
+        print(error)
+        print("==============================\n")
+        input("Press Enter to exit")
+    finally:
+        print("Cleaning up and exiting...")
         out_records.close #Close the file
         GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
         GPIO.output(pinDict["IO2"],GPIO.LOW) #Turn power off to Secondary Power
         GPIO.output(pinDict["IO3"],GPIO.LOW) #Turn power off to Backup Power
         GPIO.output(pinDict["IO4"],GPIO.LOW) #Turn power off to T-Node
         GPIO.cleanup() #Clean up GPIOs
-        print("\n==============================\n")
-        print("The program encountered an error!\n")
-        print("==============================\n")
-        input("Press Enter to exit")
-##    except:
-##        out_records.write(",PROGRAM ERROR\n")#Line return to go to next record
-##        out_records.close #Close the file
-##        GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
-##        GPIO.output(pinDict["IO2"],GPIO.LOW) #Turn power off to Secondary Power
-##        GPIO.output(pinDict["IO3"],GPIO.LOW) #Turn power off to Backup Power
-##        GPIO.output(pinDict["IO4"],GPIO.LOW) #Turn power off to T-Node
-##        GPIO.cleanup() #Clean up GPIOs
-##        print("\n==============================\n")
-##        print("The program encountered an error!\n")
-##        print("==============================\n")
-##        input("Press Enter to exit")
 
 
 
@@ -359,7 +358,11 @@ def enable33SEPIC(x2,mbRetries):#Function made since it is done so often
 #Used to get the PCB's serial number and ensure it is valid
 def getSN(snlen):
     #Get the SN from the user
-    sn = input("Please connect PCB and then enter the PCB's serial number (-1 if done): ")
+    sn = input("Please do the following (Enter -1 if done):\n"
+               "1) Insert the SD Card\n"
+               "2) Connect the PCB\n"
+               "3) Enter the PCB's serial number\n"
+               "Serial Number: ")
 
     #Confirm the SN is the right number of digits
     i = True
@@ -809,7 +812,7 @@ def testSysCur(GPIO,pinDict,x2,mbRetries):
 
     #Enable the 3.3V SEPIC
     if(enable33SEPIC(x2,mbRetries)== False):
-        return ["Fail-Enabling the 3.3V SEPIC was not successful"]
+        return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999]
 
     #Read system current
     print("Reading the system current...")
@@ -819,9 +822,9 @@ def testSysCur(GPIO,pinDict,x2,mbRetries):
         currentLevel=valueRangeCheck(150,10,curr)
     else:
         print("The read was not successful")
-        return ["Fail-The Modbus read failed"]
+        return ["Fail-The Modbus read failed",-999999]
 
-    return [currentLevel[1]]
+    return [currentLevel[1],curr]
 
 #Test the Wi-Fi module is operating correctly
 def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
