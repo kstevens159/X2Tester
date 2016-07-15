@@ -206,10 +206,13 @@ def main():
 
         ##Continually loop through the test process to allow the user to test a batch of PCBs
         sn = getSN(snlen)
+        retryAttempts=0
         while (sn != "-1"): #Loop through all PCBs to be tested
             startTime=time.time()#Timestamp beginning time
             
             out_records.write("%s" % sn) #Write serial number to file
+
+            failureCount=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
             #Test the 3V LDO
             print("\n------------------------------")
@@ -219,6 +222,9 @@ def main():
             print("Test result:",result1)
             out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result1[0]!="Pass"):
+                failureCount[0]=1
 
             #Test the RS-485 driver, EE and processor
             print("\n------------------------------")
@@ -228,6 +234,9 @@ def main():
             print("Test result:",result2)
             out_records.write(",%s,%s" % (result2[0],result2[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result2[0]!="Pass" or result2[1]!="Pass"):
+                failureCount[1]=1
 
             #Test the RTC Clock & Battery
             print("\n------------------------------")
@@ -237,6 +246,9 @@ def main():
             print("Test result:",result3)
             out_records.write(",%s,%s,%s,%s" % (result3[0],result3[1],result3[2],result3[3])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result3[0]!="Pass" or result3[2]!="Pass"):
+                failureCount[2]=1
 
             #Test the 3.3V SEPIC Converter
             print("\n------------------------------")
@@ -246,6 +258,9 @@ def main():
             print("Test result:",result4)
             out_records.write(",%s,%s" % (result4[0],result4[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result4[0]!="Pass"):
+                failureCount[3]=1
 
             #Test the Serial Flash
             print("\n------------------------------")
@@ -257,6 +272,9 @@ def main():
 ##            out_records.write(",%s,%s" % (result5[0])) #Write the result to the file
             out_records.write(",Not tested")
             print("------------------------------\n")
+##            #Mark if failure occured
+##            if(result5[0]!="Pass"):
+##                failureCount[4]=1
 
             #Test SD Card
             print("\n------------------------------")
@@ -266,6 +284,9 @@ def main():
             print("Test result:",result6)
             out_records.write(",%s" % (result6[0])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result6[0]!="Pass"):
+                failureCount[5]=1
 
             #Test Priority Power Switch
             print("\n------------------------------")
@@ -278,6 +299,9 @@ def main():
                                                                      result7[6],result7[7],bin(result7[8]),
                                                                      result7[9],bin(result7[10])))
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result7[0]!="Pass" or result7[3]!="Pass" or result7[6]!="Pass" or result7[9]!="Pass"):
+                failureCount[6]=1
             
             #Test System Current
             print("\n------------------------------")
@@ -287,6 +311,9 @@ def main():
             print("Test result:",result8)
             out_records.write(",%s,%s" % (result8[0],result8[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result8[0]!="Pass"):
+                failureCount[7]=1
 
             #Test the 12V SEPIC Converter
             print("\n------------------------------")
@@ -296,6 +323,9 @@ def main():
             print("Test result:",result9)
             out_records.write(",%s,%s" % (result9[0],result9[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result9[0]!="Pass"):
+                failureCount[8]=1
 
             #Test the 5V LDO Converter
             print("\n------------------------------")
@@ -305,6 +335,9 @@ def main():
             print("Test result:",result10)
             out_records.write(",%s,%s" % (result10[0],result10[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result10[0]!="Pass"):
+                failureCount[9]=1
 
             #Test the 12V Sensor Switch
             print("\n------------------------------")
@@ -317,6 +350,9 @@ def main():
                                                             result11[4],result11[5],
                                                             result11[6],result11[7]))
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result11[0]!="Pass" or result11[2]!="Pass" or result11[4]!="Pass" or result11[6]!="Pass"):
+                failureCount[10]=1
 
             #Test Sensor Current
             print("\n------------------------------")
@@ -326,6 +362,9 @@ def main():
             print("Test result:",result12)
             out_records.write(",%s,%s" % (result12[0],result12[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result12[0]!="Pass"):
+                failureCount[11]=1
 
             #Test Priority Power Out Switch
             print("\n------------------------------")
@@ -336,6 +375,9 @@ def main():
             out_records.write(",%s,%s,%s,%s" % (result13[0],result13[1],
                                                 result13[2],result13[3])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result13[0]!="Pass" or result13[2]!="Pass"):
+                failureCount[12]=1
 
             #Test the Sensor Ports
             print("\n------------------------------")
@@ -347,6 +389,11 @@ def main():
                                                                result14[3],result14[4],result14[5],
                                                                result14[6],result14[7],result14[8],)) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result14[0]!="Pass" or result14[1]!="Pass" or result14[2]!="Pass" or
+               result14[3]!="Pass" or result14[4]!="Pass" or result14[5]!="Pass" or
+               result14[6]!="Pass" or result14[7]!="Pass" or result14[8]!="Pass"):
+                failureCount[13]=1
 
             #Test Pressure/Temp/Humidity
             print("\n------------------------------")
@@ -359,6 +406,9 @@ def main():
                                                          result15[3],result15[4],
                                                          result15[5],result15[6])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result15[0]!="Pass" or result15[1]!="Pass" or result15[3]!="Pass" or result15[5]!="Pass"):
+                failureCount[14]=1
 
             #Test Trigger
             print("\n------------------------------")
@@ -368,6 +418,9 @@ def main():
             print("Test result:",result16)
             out_records.write(",%s,%s" % (result16[0],result16[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result16[0]!="Pass" or result16[1]!="Pass"):
+                failureCount[15]=1
 
             #Test RTU RS-485 Passthrough
             print("\n------------------------------")
@@ -377,6 +430,9 @@ def main():
             print("Test result:",result17)
             out_records.write(",%s" % (result17[0])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result17[0]!="Pass"):
+                failureCount[16]=1
 
             #Test the Magnetic Switch
             print("\n------------------------------")
@@ -386,7 +442,10 @@ def main():
             print("Test result:",result18)
             out_records.write(",%s,%s,%s,%s,%s,%s" % (result18[0],result18[1],result18[2],
                                                       result18[3],result18[4],result18[5])) #Write the result to the file
-            print("------------------------------\n")       
+            print("------------------------------\n")
+            #Mark if failure occured
+            if(result18[0]!="Pass" or result18[2]!="Pass" or result18[3]!="Pass" or result18[5]!="Pass"):
+                failureCount[17]=1
 
             #Test K64 LEDs
             print("\n------------------------------")
@@ -396,6 +455,9 @@ def main():
             print("Test result:",result19)
             out_records.write(",%s" % (result19[0])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result19[0]!="Pass"):
+                failureCount[18]=1
 
             #Test the Wi-Fi module (LEDs, Communication, Network)
             print("\n------------------------------")
@@ -405,30 +467,64 @@ def main():
             print("Test result:",result20)
             out_records.write(",%s,%s" % (result20[0],result20[1])) #Write the result to the file
             print("------------------------------\n")
+            #Mark if failure occured
+            if(result20[0]!="Pass" or result20[2]!="Pass"):
+                failureCount[19]=1
 
             #Mark end of board itteration
             endTime=time.time()#Timestamp ending time
             itterationTime=round(endTime-startTime,1)
             out_records.write(",%s" % (itterationTime))
 
-            #Turn off the power
-            GPIO.output(pinDict["IO1"],GPIO.LOW)
-            GPIO.output(pinDict["IO2"],GPIO.LOW)
-            GPIO.output(pinDict["IO3"],GPIO.LOW)
-            GPIO.output(pinDict["IO4"],GPIO.LOW)
-            
-            input("The current board has finished testing and is safe to remove.\n"
-                  "Please remember to remove the SD Card\n\n"
-                  "Press Enter to continue\n")
             print("----------------------------------------------")
-            print("Board SN:",sn,"Done")
+            print("Board SN:",sn,"Done Test Itteration")
             print("The test took a total of",itterationTime,"seconds")
             print("----------------------------------------------\n\n")
+            
 
-            #Prepare for next board
-            out_records.write("\n")#Line return to go to next record
-            out_records.flush()
-            sn = getSN(snlen) #Get new board SN
+            #Check for failed modules and allow retry
+            failures=sum(failureCount)
+            #If there were failures tell user and see if they want to rety those sections
+            if(failures>0):
+                print("The curent board has finished testing all sections.\n"
+                      "There were",failures,"failures.")
+                done=False
+                while not (done):
+                    retrySections = input("Would you like to retry the failed sections? (y/n): ")
+                    if(retrySections == "y" or retrySections == "Y"):
+                        retryTest=True
+                        done=True
+                    elif(retrySections == "n" or retrySections == "N"):
+                        retryTest=False
+                        done=False
+                    else:
+                        print("\nYou must enter y or n. Try again.\n")
+            else:
+                print("The board completed testing with no failures")
+
+            #Decide whether to end itteration or re-loop
+            if(retryTest):
+                retryAttempts = retryAttempts+1
+                sn = sn+" --RETRY-- "+retryAttemps
+            else:
+                #Turn off the power
+                GPIO.output(pinDict["IO1"],GPIO.LOW)
+                GPIO.output(pinDict["IO2"],GPIO.LOW)
+                GPIO.output(pinDict["IO3"],GPIO.LOW)
+                GPIO.output(pinDict["IO4"],GPIO.LOW)
+
+                #Set retry attempts back to 0 for next board
+                retryAttempts=0
+                    
+                #End current board itteration
+                input("The current board has finished testing and is safe to remove.\n"
+                      "Please remember to remove the SD Card\n\n"
+                      "Press Enter to continue\n")
+
+                #Prepare for next board
+                out_records.write("\n")#Line return to go to next record
+                out_records.flush()
+                sn = getSN(snlen) #Get new board SN
 
     #Define operation when an exception occurs
     except KeyboardInterrupt:
