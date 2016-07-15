@@ -36,7 +36,7 @@ mbReg={ "Add"               :[0x1000,              1,                  4       ]
         ,"ReadTime"         :[0x701C,              4,                  4       ]#Reg1:Top of UTC Time; Reg2: Bottom of UTC Time; Reg3: Top of TZ Offset; Reg4: Bottom of TZ Offset
         ,"33SEPIC_OF"       :[0x7500,              1,                  16      ]#Reg1: 0=off; 1=on
         ,"VCC33_V"          :[0x750C,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
-        ,"SDTest"           :[0x7524,              1,                  4       ]#Reg1: 0=write/read fail; 1=write/read success
+        ,"SDTest"           :[0x7523,              1,                  4       ]#Reg1: 0=write/read fail; 1=write/read success
         ,"PriPwr_V"         :[0x7510,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
         ,"SecPwr_V"         :[0x7512,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
         ,"BakPwr_V"         :[0x7514,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
@@ -53,19 +53,18 @@ mbReg={ "Add"               :[0x1000,              1,                  4       ]
         ,"SenCur"           :[0x751A,              2,                  4       ]#Reg1: Upper word of float; Reg2: Lower word of float
         ,"PriPwr_OF"        :[0x7507,              1,                  16      ]#Reg1: 0=off; 1=on
         ,"WiFiPwr_OF"       :[0x7508,              1,                  16      ]#Reg1: 0=off; 1=on
-        ,"WiFiComLEDTest"   :[0x7525,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success - Each send also toggles LEDs on/off
-        ,"RS485ComTest"     :[0x752B,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
-        ,"RS232AComTest"    :[0x752C,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
-        ,"RS232BComTest"    :[0x752D,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
-        ,"RS232CComTest"    :[0x752E,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
-        ,"SDI12ComTest"     :[0x752F,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
-        ,"MagIntTest0"      :[0x7527,              2,                  4       ]#Reg1: Top of UTC time since last mag; Reg2: Bottom of UTC time since last mag
-        ,"MagIntTest1"      :[0x7529,              2,                  4       ]#Reg1: Top of UTC time since last mag; Reg2: Bottom of UTC time since last mag
+        ,"WiFiComLEDTest"   :[0x7524,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success - Each send also toggles LEDs on/off
+        ,"RS485ComTest"     :[0x752A,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
+        ,"RS232AComTest"    :[0x752B,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
+        ,"RS232BComTest"    :[0x752C,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
+        ,"RS232CComTest"    :[0x752D,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
+        ,"SDI12ComTest"     :[0x752E,              1,                  4       ]#Reg1: 0=comm. fail; 1=comm. success
+        ,"MagIntTest0"      :[0x7526,              2,                  4       ]#Reg1: Top of UTC time since last mag; Reg2: Bottom of UTC time since last mag
+        ,"MagIntTest1"      :[0x7528,              2,                  4       ]#Reg1: Top of UTC time since last mag; Reg2: Bottom of UTC time since last mag
         ,"ReadInternalSens" :[0x751D,              6,                  4       ]#Reg1: Upper word of pressure float; Reg2: Lower word of pressure float; Reg1: Upper word of temp float; Reg2: Lower word of temp float; Reg1: Upper word of humidity float; Reg2: Lower word of humidity float; 
-        ,"K64LED"           :[0x7526,              1,                  16      ]#Reg1: 0=off; 1=on
+        ,"K64LED"           :[0x7525,              1,                  16      ]#Reg1: 0=off; 1=on
         ,"Trigger1_OF"      :[0x7509,              1,                  16      ]#Reg1: 0=off; 1=on
         ,"Trigger2_OF"      :[0x750A,              1,                  16      ]#Reg1: 0=off; 1=on
-
         ,"RTU50SysCur"      :[0x1000,              1,                  4       ]
         ,"RTU33SysCur"      :[0x1000,              1,                  4       ]
         ,"EthPwr_OF"        :[0x1000,              1,                  4       ]

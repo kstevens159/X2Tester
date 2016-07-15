@@ -54,6 +54,7 @@ def main():
         wifiNetwork = "X2 Logger-C899CF"
         #USB RS-485 Parameters
         x2mbAddress = 252 #X2 Main universal address
+        tnodembAddress = 20
         baud = 19200
         parity = 'N'
         bytesize=8
@@ -79,6 +80,15 @@ def main():
         minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
 ##        x2.debug=True
 
+        #Setup the modbus instance of the Passthrough T-Node
+        tnode = minimalmodbus.Instrument(comPort, tnodembAddress)#Define the minimalmodbus instance
+        tnode.serial.baudrate = baud
+        tnode.serial.parity = parity
+        tnode.serial.bytesize = bytesize
+        tnode.serial.stopbits = stopbits
+        tnode.serial.timeout = modbusTimeout
+##        tnode.debug=True
+
         ##Define GPIO Interface
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
         GPIO.setwarnings(False)
@@ -95,8 +105,8 @@ def main():
         GPIO.setup(pinDict["IO2"], GPIO.OUT)
         GPIO.setup(pinDict["IO3"], GPIO.OUT)
         GPIO.setup(pinDict["IO4"], GPIO.OUT)
-        GPIO.setup(pinDict["TRIGGER1"], GPIO.OUT)
-        GPIO.setup(pinDict["TRIGGER2"], GPIO.OUT)
+        GPIO.setup(pinDict["TRIGGER1"], GPIO.IN)
+        GPIO.setup(pinDict["TRIGGER2"], GPIO.IN)
         
         ########################
         ## Create Output File ##
@@ -159,8 +169,6 @@ def main():
                               "Priority Power Output 1 Voltage,"
                               "Priority Power Output 2 Status,"
                               "Priority Power Output 2 Voltage,"
-                              "Wi-Fi Network Status,"
-                              "wi-Fi LED and Communication Status,"
                               "Port 0 RS-485 Sensor Status,"
                               "Port 0 RS-232 Sensor Status,"
                               "Port 0 SDI-12 Sensor Status,"
@@ -170,11 +178,25 @@ def main():
                               "Port 2 RS-485 Sensor Status,"
                               "Port 2 RS-232 Sensor Status,"
                               "Port 2 SDI-12 Sensor Status,"                              
-                              "Magnetic Switch Status,"
                               "Pressure/Temp/Humidity Chip Status,"
-                              "Passthrough RS-485 Status,"
+                              "Pressure Status,"
+                              "Pressure Reading,"
+                              "Temperature Status,"
+                              "Temperature Reading,"
+                              "Humidity Status,"
+                              "Humidity Reading,"
                               "Trigger 1 Status,"
                               "Trigger 2 Status,"
+                              "Passthrough RS-485 Status,"
+                              "Magnetic Switch 1 Read Status,"
+                              "Magnetic Switch 1 Time Difference,"
+                              "Magnetic Switch 1 LED Status,"
+                              "Magnetic Switch 2 Read Status,"
+                              "Magnetic Switch 2 Time Difference,"
+                              "Magnetic Switch 2 LED Status,"
+                              "K64 LEDs Status,"
+                              "Wi-Fi Network Status,"
+                              "Wi-Fi LED and Communication Status,"                                                
                               "Itteration Time,"
                               "\n")
 
@@ -316,27 +338,74 @@ def main():
                                                 result13[2],result13[3])) #Write the result to the file
             print("------------------------------\n")
 
-            #Test the Wi-Fi module (LEDs, Communication, Network)
-            print("\n------------------------------")
-            print("Testing the Wi-Fi Module...")
-            result14=testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
-            print ("=====================")
-            print("Test result:",result14)
-            out_records.write(",%s,%s" % (result14[0],result14[1])) #Write the result to the file
-            print("------------------------------\n")
-
             #Test the Sensor Ports
             print("\n------------------------------")
             print("Testing the Sensor Ports...")
-            result15=testSensor(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the Sensor port test module
+            result14=testSensor(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the Sensor port test module
             print ("=====================")
-            print("Test result:",result15)
-            out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result15[0],result15[1],result15[2],
-                                                               result15[3],result15[4],result15[5],
-                                                               result15[6],result15[7],result15[8],)) #Write the result to the file
+            print("Test result:",result14)
+            out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result14[0],result14[1],result14[2],
+                                                               result14[3],result14[4],result14[5],
+                                                               result14[6],result14[7],result14[8],)) #Write the result to the file
             print("------------------------------\n")
 
+            #Test Pressure/Temp/Humidity
+            print("\n------------------------------")
+            print("Testing the pressure, temperatur, and humidity chip...")
+            result15=testpressTempHum(GPIO,pinDict,x2,mbRetries) #Call the pressure temp. humidity test module
+            print ("=====================")
+            print("Test result:",result15)
+            out_records.write(",%s,%s,%s,%s,%s,%s,%s" % (result15[0],
+                                                         result15[1],result15[2],
+                                                         result15[3],result15[4],
+                                                         result15[5],result15[6])) #Write the result to the file
+            print("------------------------------\n")
 
+            #Test Trigger
+            print("\n------------------------------")
+            print("Testing the Trigger Lines...")
+            result16=testTriggers(GPIO,pinDict,x2,mbRetries) #Call the trigger lines test module
+            print ("=====================")
+            print("Test result:",result16)
+            out_records.write(",%s,%s" % (result16[0],result16[1])) #Write the result to the file
+            print("------------------------------\n")
+
+            #Test RTU RS-485 Passthrough
+            print("\n------------------------------")
+            print("Testing the RS-485 Passthrough...")
+            result17=testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode) #Call the RS-485 Passthrough test module
+            print ("=====================")
+            print("Test result:",result17)
+            out_records.write(",%s" % (result17[0])) #Write the result to the file
+            print("------------------------------\n")
+
+            #Test the Magnetic Switch
+            print("\n------------------------------")
+            print("Testing the Magnetic Switch...")
+            result18=testMagSW(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the magnetic switch test module
+            print ("=====================")
+            print("Test result:",result18)
+            out_records.write(",%s,%s,%s,%s,%s,%s" % (result18[0],result18[1],result18[2],
+                                                      result18[3],result18[4],result18[5])) #Write the result to the file
+            print("------------------------------\n")       
+
+            #Test K64 LEDs
+            print("\n------------------------------")
+            print("Testing the K64 LEDs...")
+            result19=testK64LEDs(GPIO,pinDict,x2,mbRetries) #Call the K64 LEDs test module
+            print ("=====================")
+            print("Test result:",result19)
+            out_records.write(",%s" % (result19[0])) #Write the result to the file
+            print("------------------------------\n")
+
+            #Test the Wi-Fi module (LEDs, Communication, Network)
+            print("\n------------------------------")
+            print("Testing the Wi-Fi Module...")
+            result20=testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
+            print ("=====================")
+            print("Test result:",result20)
+            out_records.write(",%s,%s" % (result20[0],result20[1])) #Write the result to the file
+            print("------------------------------\n")
             
 
 
@@ -384,18 +453,18 @@ def main():
         print("The program was cancelled by a keyboard interrupt!\n")
         print("==============================\n")
         input("Press Enter to exit\n")
-    except Exception as error:
-        out_records.write(",PROGRAM ERROR,")
-        out_records.write(str(error))
-        out_records.write("\n")#Line return to go to next record
-        out_records.flush()
-        print("\n==============================\n")
-        print("The program encountered the following error!\n")
-        print("Error Type: ", type(error))
-        print(error.args)
-        print(error)
-        print("==============================\n")
-        input("Press Enter to exit\n")
+##    except Exception as error:
+##        out_records.write(",PROGRAM ERROR,")
+##        out_records.write(str(error))
+##        out_records.write("\n")#Line return to go to next record
+##        out_records.flush()
+##        print("\n==============================\n")
+##        print("The program encountered the following error!\n")
+##        print("Error Type: ", type(error))
+##        print(error.args)
+##        print(error)
+##        print("==============================\n")
+##        input("Press Enter to exit\n")
     finally:
         print("Cleaning up and exiting...")
         out_records.close #Close the file
@@ -488,6 +557,65 @@ def getSN(snlen):
             i = False       
     return sn
 
+#Magnet Switch Test
+def magSWCheck(x2,mbRetries,mbDictName,magSWNum):
+    
+    #Get user input for magnet
+    done=False
+    while not(done):
+        magraw= input("\nPlease use a magnet to trigger magnetic switch "+magSWNum+".\n"
+                      "Did the corresponding LED light up when triggered (y/n)?: ")
+        if(magraw=="y" or magraw =="Y"):
+            print("The LED has been marked as working\n")
+            magLEDStat="Pass"
+            done=True
+        elif(magraw=="n" or magraw=="N"):
+            print("The LED has been marked as NOT working\n")
+            magLEDStat="Fail-LED did not illuminate"
+            done=True
+        else:
+            print("\nYou must enter y or n for you response. Please try again.\n")
+            #Turn off the Wi-Fi so it doesn't interfere on the RS-485 bus
+            enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
+
+    #Turn off the Wi-Fi so it doesn't interfere on the RS-485 bus
+    enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
+
+    #Check the time since last magnet and ensure it was recent
+    #Read the current device time
+    TimeReadResult = mbReadRetries(x2,Reg.mbReg["ReadTime"][0],Reg.mbReg["ReadTime"][1],retries=mbRetries) #Read from the X2
+    if(TimeReadResult):
+        readTime=[TimeReadResult[0],TimeReadResult[1]] #The first two 16 bits are the time, the next two are the tz offset
+        convResult1 = combineFrom16Bits(readTime) #Convert to a single 32-bit time
+        formatedDateTime1 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(convResult1)) # Convert from Epoch to readable
+        print("The device's original time is",formatedDateTime1,"\n")
+
+        #Read the time the magnet was last triggered
+        print("Reading the time since last magnet trigger...")
+        magnetTimeReadResult = mbReadRetries(x2,Reg.mbReg[mbDictName][0],Reg.mbReg[mbDictName][1],retries=mbRetries) #Read from the X2
+        if(magnetTimeReadResult):
+            convResult2=combineFrom16Bits(magnetTimeReadResult) #Convert to a single 32-bit time
+            formatedDateTime2 = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(convResult2)) # Convert from Epoch to readable
+            print("The last magnet read time is",formatedDateTime2,"\n")
+
+            #Compare the two times
+            print("Comparing the two times...")
+            timeDiff = abs(convResult1 - convResult2)
+            if(timeDiff < 60):
+                print("Success - The time difference is",timeDiff,"seconds. The max acceptable difference is 60 seconds")
+                magReadStat="Pass"
+            else:
+                print("Failure - The time difference is",timeDiff,"seconds. The max acceptable difference is 60 seconds")
+                magReadStat="Fail-Time between last read and current time is too great"
+        else:
+            print("Reading time since last magnet trigger was not successful")
+            magReadStat="Fail-Reading time since last magnet trigger was not successful"
+    else:
+        print("Reading current time was not successful")
+        magReadStat="Fail-Reading current time was not successful"
+
+    return [magReadStat,timeDiff,magLEDStat]
+
 #This function is used to gracefully handle failed reads and allow retries 
 def mbReadFloatRetries(device,reg,numReg=2,retries=5): #(Minimalmodbus device),(Register address),(Number of registers to read),(Retry attempts)
     for i in range (0,retries):
@@ -553,8 +681,11 @@ def powerOn(x2,mbRetries,GPIO,pinDict,pinValue,delay=3):
         #Not sure reason, but possible execution speed is faster in cmd line
         time.sleep(delay)
 
-        #Turn off the Wi-Fi so it doesn't interfere on the RS-485 bus
-        enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
+        #If not turning on T-Node disable the Wi-Fi
+        if(pinValue!="IO4"):
+            #Turn off the Wi-Fi so it doesn't interfere on the RS-485 bus
+            enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
+            
     return True
 
 #Tests the voltage and valid line status for a power input channel
@@ -813,6 +944,128 @@ def test5VLDO(GPIO,pinDict,x2,mbRetries,spi):
         enableDisable(x2,mbRetries,"12SEPIC_OF","12V SEPIC",0)#Turn off 12V SEPIC
         return ["Fail-Enabling the 5V LDO was not successful",-999999]
 
+#Test the K64 LEDs turn on
+def testK64LEDs(GPIO,pinDict,x2,mbRetries):
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+
+    #Enable the 3.3V SEPIC
+    if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1) == False):
+        return ["Fail-Enabling the 3.3V SEPIC was not successful"]
+
+    #Enable the Wi-Fi LEDs
+    print("\nTesting the K64 LEDs...")
+    writeResult1 = mbWriteRetries(x2,Reg.mbReg["K64LED"][0],[1],retries=mbRetries)#0 = LEDs on; 1 = LEDs off
+    if(writeResult1):
+        print("The LEDs were enabled")
+        #Check if LEDs were enabled
+        done=False
+        while not(done):
+            LEDUserInput = input("Did all 4 K64 LEDs come on? (y/n): ")
+            if(LEDUserInput == "y" or LEDUserInput == "Y"):
+                print("\nSuccess - You indicated that the LEDs were enabled\n")
+                LEDStatus = "Pass"
+                done=True
+            elif (LEDUserInput == "n" or LEDUserInput == "n"):
+                print("\nFailure -  You indicated that the LEDs were not all enabled\n")
+                LEDStatus = "Fail-All LEDs were not turned on"
+                done=True
+            else:
+                print("\nYou must enter y or n. Try again.\n")
+                done=False
+    else:
+        LEDStatus="Fail-Turning the LEDs on was not successful"
+
+    #Turn the LEDs back off
+    print("Turning the LEDs back off...")
+    writeResult2 = mbWriteRetries(x2,Reg.mbReg["K64LED"][0],[0],retries=mbRetries)#0 = LEDs on; 1 = LEDs off
+    if(writeResult2):
+        print("LEDs were successfully disabled")
+    else:
+        print("Disabling the LEDs failed")
+
+    return [LEDStatus]
+
+#Test the magnetic switches are working correctly
+def testMagSW(GPIO,pinDict,x2,mbRetries,modbusTimeout):
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+
+    #Set the Modbus timeout to 1 seconds to prevent failure since Wi-Fi is turned
+    #on when the magnet wakeup is triggered
+    x2.serial.timeout = 1
+
+    #Get user input for first magnet
+    [mag1ReadStat,timeDiff1,mag1LEDStat]= magSWCheck(x2,mbRetries,"MagIntTest0","one")
+
+    #Get user input for second magnet
+    [mag2ReadStat,timeDiff2,mag2LEDStat]= magSWCheck(x2,mbRetries,"MagIntTest1","two")
+
+    #Set the Modbus timeout back to the program default
+    x2.serial.timeout = modbusTimeout
+
+    return [mag1ReadStat,timeDiff1,mag1LEDStat,mag2ReadStat,timeDiff2,mag2LEDStat]
+
+#Test pressure temperature and humidity chip
+def testpressTempHum(GPIO,pinDict,x2,mbRetries):
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+
+    #Enable the 3.3V SEPIC
+    if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1) == False):
+        return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999,
+                "Fail-Enabling the 3.3V SEPIC was not successful",-999999,
+                "Fail-Enabling the 3.3V SEPIC was not successful",-999999]
+
+    #Read the internal sensor chip's values
+    print("\nReading pressure, temperature, and humidity chip...")
+    readResult = mbReadRetries(x2,Reg.mbReg["ReadInternalSens"][0],Reg.mbReg["ReadInternalSens"][1],retries=mbRetries)
+    if(readResult):
+
+        sensorStatus="Pass"
+        
+        #Convert first two registers to the pressure reading
+        pressureRaw=[readResult[0],readResult[1]]#First two registers are for pressure
+        pressureComb=combineFrom16Bits(pressureRaw)#Combine into a single value
+        pressureValue=round(struct.unpack('!f',bytes.fromhex(hex(pressureComb)[2:]))[0],3)#Convert to IEEE floating point
+        print("\nThe pressure reading is:",pressureValue,"mBar\n")
+
+        #Check pressure is in range
+        [checkState1,pressureStatus]=valueRangeCheck(1000,500,pressureValue)#Expected, tolerance, test input
+
+        #Convert next two registers to the temperature reading
+        temperatureRaw=[readResult[2],readResult[3]]#Next two registers are for temperature
+        temperatureComb=combineFrom16Bits(temperatureRaw)#Combine into a single value
+        temperatureValue=round(struct.unpack('!f',bytes.fromhex(hex(temperatureComb)[2:]))[0],3)#Convert to IEEE floating point
+        print("\nThe temperature reading is:",temperatureValue,"degrees C\n")
+
+        #Check temperature is in range
+        [checkState2,temperatureStatus]=valueRangeCheck(20,15,temperatureValue)#Expected, tolerance, test input
+
+        #Convert last two registers to the humidity reading
+        humidityRaw=[readResult[4],readResult[5]]#Last two registers are for humidity
+        humidityComb=combineFrom16Bits(humidityRaw)#Combine into a single value
+        humidityValue=round(struct.unpack('!f',bytes.fromhex(hex(humidityComb)[2:]))[0],3)#Convert to IEEE floating point
+        print("\nThe humidity reading is:",humidityValue,"%\n")
+
+        #Check humidity is in range
+        [checkState3,humidityStatus]=valueRangeCheck(50,45,humidityValue)#Expected, tolerance, test input
+
+    else:
+        print("Failed to read from the internal pressure, temperature, humidity chip")
+        sensorStatus="Fail-Reading internal sensor was not successful"
+        pressureValue=-999999
+        temperatureValue=-999999
+        humidityValue=-999999
+
+   
+    return [sensorStatus,pressureStatus,pressureValue,temperatureStatus,temperatureValue,humidityStatus,humidityValue]
 
 #Test the priority power path out switch is working correctly
 def testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi):
@@ -990,6 +1243,22 @@ def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
             print("The write was not successful")
             return ["Fail-Writing address was not successful","Pass"] #Assume EE is OK, since address started as a non default value (1)
 
+#Test RS-485 Passthrough
+def testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode):
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+    powerOn(x2,mbRetries,GPIO,pinDict,"IO4")
+
+    print("Reading address from the RS-485 passthrough T-Node...")
+    readResult = mbReadRetries(tnode,Reg.mbReg["Add"][0],Reg.mbReg["Add"][1],retries=mbRetries)
+    if(readResult):
+        print("The RS-485 passthrough T-Node was read successfully")
+        return ["Pass"]
+    else:
+        print("The RS-485 passthrough T-Node was not read successfully")
+        return ["Fail-T-Node did not respond"]
+
 #Test RTC Battery Functionality
 def testRTC(GPIO,pinDict,x2,mbRetries):
     print ("=====================")
@@ -1106,7 +1375,7 @@ def testSenCur(GPIO,pinDict,x2,mbRetries):
     readResult = mbReadFloatRetries(x2,Reg.mbReg["SenCur"][0],Reg.mbReg["SenCur"][1],retries=mbRetries)
     if(readResult):
         curr=readResult[0]
-        currentLevel=valueRangeCheck(15,10,curr)
+        currentLevel=valueRangeCheck(3,2,curr)
     else:
         print("The read was not successful")
         return ["Fail-The Modbus read failed",-999999]
@@ -1192,8 +1461,7 @@ def testSensor(GPIO,pinDict,x2,mbRetries,modbusTimeout):
 
 
     #Set the Modbus timeout back to the program default
-    x2.serial.timeout = modbusTimeout
-    
+    x2.serial.timeout = modbusTimeout  
 
     return [port0Status[0],port0Status[1],port0Status[2],
             port1Status[0],port1Status[1],port1Status[2],
@@ -1215,12 +1483,32 @@ def testSysCur(GPIO,pinDict,x2,mbRetries):
     readResult = mbReadFloatRetries(x2,Reg.mbReg["SysCur"][0],Reg.mbReg["SysCur"][1],retries=mbRetries)
     if(readResult):
         curr=readResult[0]
-        currentLevel=valueRangeCheck(5,3,curr)
+        currentLevel=valueRangeCheck(15,3,curr)
     else:
         print("The read was not successful")
         return ["Fail-The Modbus read failed",-999999]
 
     return [currentLevel[1],curr]
+
+#Test trigger lines
+def testTriggers(GPIO,pinDict,x2,mbRetries):
+    print ("=====================")
+    print (datetime.datetime.now().strftime("%Y.%m.%d_%H.%M.%S"))
+    print ("=====================")
+    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+
+    #Enable the 3.3V SEPIC
+    if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)== False):
+        return ["Fail-Enabling the 3.3V SEPIC was not successful",
+                "Fail-Enabling the 3.3V SEPIC was not successful"]
+
+    #Test the trigger lines are correct
+    print("\nTesting Trigger 1...\n")
+    trigger1 = triggerLineTest(GPIO,pinDict,x2,mbRetries,"Trigger1_OF","Trigger 1","TRIGGER1")
+    print("\nTesting Trigger 2...\n")
+    trigger2 = triggerLineTest(GPIO,pinDict,x2,mbRetries,"Trigger2_OF","Trigger 2","TRIGGER2")
+
+    return [trigger1, trigger2]
 
 #Test the Wi-Fi module is operating correctly
 def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
@@ -1268,6 +1556,40 @@ def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
     enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
 
     return [networkStatus,LEDStatus]
+
+#Test a trigger line
+def triggerLineTest(GPIO,pinDict,x2,mbRetries,mbDictName,clearText,IOName):
+
+    #Enable Trigger
+    enableDisable(x2,mbRetries,mbDictName,clearText,1)
+
+    #Read RPi IO line
+    onStatus=GPIO.input(pinDict[IOName])
+    print("The trigger read status is",onStatus,"\n")
+
+    #Disable Trigger
+    enableDisable(x2,mbRetries,mbDictName,clearText,0)
+
+    #Read RPi IO line
+    offStatus=GPIO.input(pinDict[IOName])
+    print("The trigger read status is",offStatus,"\n")
+
+    #Test Reads
+    if(onStatus == 1):
+        if (offStatus == 0):
+            print("The trigger works correctly")
+            return "Pass"
+        else:
+            print("The trigger operation failed in the off state")
+            return "Fail-Off status was "+str(offStatus)
+    else:
+        if(offStatus == 0):
+            print("The trigger operation failed in the on state")
+            return "Fail-On status was "+str(onStatus)
+        else:
+            print("The trigger operation failed in the on and off state")
+            return ("Fail-On status was "+str(onStatus)+
+                    " and Off status was "+str(offStatus))
 
 #Test if a read voltage falls in a certain range
 def valueRangeCheck(level,threshold,read):
