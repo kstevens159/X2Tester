@@ -50,8 +50,7 @@ def main():
         snlen = 4 #length of the serial number
         mbRetries = 3 #Number of retries on modbus commands
         wifiRetries = 10
-##        wifiNetwork = "X2 Logger"
-        wifiNetwork = "X2 Logger-C899CF"
+        wifiNetwork = "X2 Logger"
         #USB RS-485 Parameters
         x2mbAddress = 252 #X2 Main universal address
         tnodembAddress = 20
@@ -406,20 +405,6 @@ def main():
             print("Test result:",result20)
             out_records.write(",%s,%s" % (result20[0],result20[1])) #Write the result to the file
             print("------------------------------\n")
-            
-
-
-
-
-
-
-
-
-
-
-
-
-            
 
             #Mark end of board itteration
             endTime=time.time()#Timestamp ending time
@@ -453,18 +438,18 @@ def main():
         print("The program was cancelled by a keyboard interrupt!\n")
         print("==============================\n")
         input("Press Enter to exit\n")
-##    except Exception as error:
-##        out_records.write(",PROGRAM ERROR,")
-##        out_records.write(str(error))
-##        out_records.write("\n")#Line return to go to next record
-##        out_records.flush()
-##        print("\n==============================\n")
-##        print("The program encountered the following error!\n")
-##        print("Error Type: ", type(error))
-##        print(error.args)
-##        print(error)
-##        print("==============================\n")
-##        input("Press Enter to exit\n")
+    except Exception as error:
+        out_records.write(",PROGRAM ERROR,")
+        out_records.write(str(error))
+        out_records.write("\n")#Line return to go to next record
+        out_records.flush()
+        print("\n==============================\n")
+        print("The program encountered the following error!\n")
+        print("Error Type: ", type(error))
+        print(error.args)
+        print(error)
+        print("==============================\n")
+        input("Press Enter to exit\n")
     finally:
         print("Cleaning up and exiting...")
         out_records.close #Close the file
@@ -538,7 +523,6 @@ def enableDisable(x2,mbRetries,mbDictName,clearText,onOff):
 
 #Used to get the PCB's serial number and ensure it is valid
 def getSN(snlen):
-##    return 1234 #Use during testing to avoid needing to enter SN each time
     #Get the SN from the user
     sn = input("Please do the following (Enter -1 if done):\n"
                "1) Insert the SD Card\n"
@@ -817,6 +801,8 @@ def test12SEPIC(GPIO,pinDict,x2,mbRetries):
     if(enableDisable(x2,mbRetries,"12SEPIC_OF","12V SEPIC",1)== False):
         return ["Fail-Enabling the 12V SEPIC was not successful",-999999]
 
+    time.sleep(.1)
+
     #Read the 12V SEPIC voltage
     print("Reading 12V SEPIC Voltage...")
     readResult = mbReadFloatRetries(x2,Reg.mbReg["12VSen_V"][0],Reg.mbReg["12VSen_V"][1],retries=mbRetries)
@@ -909,7 +895,7 @@ def test3VLDO(GPIO,pinDict,x2,mbRetries,spi):
     print("The read voltage is",analog0,"\n")
 
     #Check if voltage is in range and return the result
-    rangeCheck=valueRangeCheck(3.0,0.05,analog0)#Expected, tolerance, test input
+    rangeCheck=valueRangeCheck(3.0,0.3,analog0)#Expected, tolerance, test input
 
     return[rangeCheck[1],analog0]
 
@@ -1087,8 +1073,8 @@ def testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi):
         print("The J3 JST read voltage is",analog7,"\n")
 
         #Check if voltage is in range and return the result
-        rangeCheck1=valueRangeCheck(12,0.5,analog6)#Expected, tolerance, test input
-        rangeCheck2=valueRangeCheck(12,0.5,analog7)#Expected, tolerance, test input
+        rangeCheck1=valueRangeCheck(12,1,analog6)#Expected, tolerance, test input
+        rangeCheck2=valueRangeCheck(12,1,analog7)#Expected, tolerance, test input
 
         enableDisable(x2,mbRetries,"PriPwr_OF","Priority Power Out Switch",0)#Turn off prio. pwr. out sw.
 
@@ -1375,7 +1361,7 @@ def testSenCur(GPIO,pinDict,x2,mbRetries):
     readResult = mbReadFloatRetries(x2,Reg.mbReg["SenCur"][0],Reg.mbReg["SenCur"][1],retries=mbRetries)
     if(readResult):
         curr=readResult[0]
-        currentLevel=valueRangeCheck(3,2,curr)
+        currentLevel=valueRangeCheck(5,3,curr)
     else:
         print("The read was not successful")
         return ["Fail-The Modbus read failed",-999999]
@@ -1483,7 +1469,7 @@ def testSysCur(GPIO,pinDict,x2,mbRetries):
     readResult = mbReadFloatRetries(x2,Reg.mbReg["SysCur"][0],Reg.mbReg["SysCur"][1],retries=mbRetries)
     if(readResult):
         curr=readResult[0]
-        currentLevel=valueRangeCheck(15,3,curr)
+        currentLevel=valueRangeCheck(15,5,curr)
     else:
         print("The read was not successful")
         return ["Fail-The Modbus read failed",-999999]
@@ -1527,6 +1513,7 @@ def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
         return ["Fail-Enabling the Wi-Fi Module was not successful",
                 "Fail-Enabling the Wi-Fi Module was not successful"]
 
+    print("Waiting for Wi-Fi to boot fully before proceeding...")
     time.sleep(8)
     
     #Search for Wi-Fi network name
@@ -1607,7 +1594,7 @@ def valueRangeCheck(level,threshold,read):
         print("Reading is too low. It is",read)
         return [False,"Fail-Reading low"]
 
-
+#Search for a specified Wi-Fi network
 def wifiNetworkSearch(wifiNetwork,wifiRetries,sleepSec=2):  
     print("Looking for an X2 Wi-Fi network...")
     for i in range(0,wifiRetries):
