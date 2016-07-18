@@ -16,7 +16,7 @@
 # --------------------------------------------------------------------------
 # Description:
 #	Used to test the X2 Main PCB's functionality at the CM. To be run
-#       on a Raspberry Pi 3.
+#       on a Raspberry Pi 3 with Python 3.
 # 
 #
 # Revision Log:
@@ -37,6 +37,7 @@ import minimalmodbus
 import RPi.GPIO as GPIO
 from wifi import Cell
 import struct
+import shutil
 
 
 def main():
@@ -199,6 +200,30 @@ def main():
                               "Itteration Time,"
                               "\n")
 
+        #Determine which modules to test for this program run
+        moduleToTest = getModulesToTest()
+        masterModuleToTest = list(moduleToTest) #Master list to revert to for each board
+        moduleName = ["Mod1  - 3V LDO",
+                      "Mod2  - RS-485 driver, EE, and processor",
+                      "Mod3  - RTC Clock & Battery",
+                      "Mod4  - 3.3V SEPIC Converter",
+                      "Mod5  - Serial Flash",
+                      "Mod6  - SD Card",
+                      "Mod7  - Priority Power Switch",
+                      "Mod8  - System Current",
+                      "Mod9  - 12V SEPIC Converter",
+                      "Mod10 - 5V LDO",
+                      "Mod11 - 12V Sensor Switch",
+                      "Mod12 - Sensor Current",
+                      "Mod13 - Priority Power Out Switch",
+                      "Mod14 - Sensor Ports",
+                      "Mod15 - Pressure/Temp/Humidity Chip",
+                      "Mod16 - Triggers",
+                      "Mod17 - RTU RS-485 Passthrough",
+                      "Mod18 - Magnetic Switch",
+                      "Mod19 - K64 LEDs",
+                      "Mod20 - Wi-Fi Module"]
+        moduleNumber=0 #Counter for which module is active
 
         ###################
         ## PCB Test Loop ##
@@ -212,269 +237,425 @@ def main():
             
             out_records.write("%s" % sn) #Write serial number to file
 
-            failureCount=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-
             #Test the 3V LDO
-            print("\n------------------------------")
-            print("Testing the 3V LDO...")
-            result1=test3VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 3V LDO test module
-            print ("=====================")
-            print("Test result:",result1)
-            out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result1[0]!="Pass"):
-                failureCount[0]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the 3V LDO...")
+                result1=test3VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 3V LDO test module
+                print ("=====================")
+                print("Test result:",result1)
+                out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result1[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("3V LDO Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the RS-485 driver, EE and processor
-            print("\n------------------------------")
-            print("Testing the Processor & RS-485 Modbus Communication...")
-            result2=testProcEEAndRS485(GPIO,pinDict,x2,mbRetries) #Call the Processor and RS-485 test module
-            print ("=====================")
-            print("Test result:",result2)
-            out_records.write(",%s,%s" % (result2[0],result2[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result2[0]!="Pass" or result2[1]!="Pass"):
-                failureCount[1]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Processor, EE, & RS-485 Modbus Communication...")
+                result2=testProcEEAndRS485(GPIO,pinDict,x2,mbRetries) #Call the Processor and RS-485 test module
+                print ("=====================")
+                print("Test result:",result2)
+                out_records.write(",%s,%s" % (result2[0],result2[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result2[0]=="Pass" and result2[1]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Processor, EE, & RS-485 Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the RTC Clock & Battery
-            print("\n------------------------------")
-            print("Testing the RTC Clock...")
-            result3=testRTC(GPIO,pinDict,x2,mbRetries) #Call the RTC Test module
-            print ("=====================")
-            print("Test result:",result3)
-            out_records.write(",%s,%s,%s,%s" % (result3[0],result3[1],result3[2],result3[3])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result3[0]!="Pass" or result3[2]!="Pass"):
-                failureCount[2]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the RTC Clock...")
+                result3=testRTC(GPIO,pinDict,x2,mbRetries) #Call the RTC Test module
+                print ("=====================")
+                print("Test result:",result3)
+                out_records.write(",%s,%s,%s,%s" % (result3[0],result3[1],result3[2],result3[3])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result3[0]=="Pass" and result3[2]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("RTC Clock & Battery Testing Skipped...")
+                out_records.write(",skipped,skipped,skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the 3.3V SEPIC Converter
-            print("\n------------------------------")
-            print("Testing the 3.3V SEPIC Converter...")
-            result4=test33SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 3.3V SEPIC test module
-            print ("=====================")
-            print("Test result:",result4)
-            out_records.write(",%s,%s" % (result4[0],result4[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result4[0]!="Pass"):
-                failureCount[3]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the 3.3V SEPIC Converter...")
+                result4=test33SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 3.3V SEPIC test module
+                print ("=====================")
+                print("Test result:",result4)
+                out_records.write(",%s,%s" % (result4[0],result4[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result4[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("3.3V SEPIC Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the Serial Flash
-            print("\n------------------------------")
-            print("Testing the Serial Flash...")
-##            result5=testSerialFlash(GPIO,pinDict,x2,mbRetries) #Call the serial flash test module
-            print ("=====================")
-##            print("Test result:",result5)
-            print("Serial Flash test skipped")
-##            out_records.write(",%s,%s" % (result5[0])) #Write the result to the file
-            out_records.write(",Not tested")
-            print("------------------------------\n")
-##            #Mark if failure occured
-##            if(result5[0]!="Pass"):
-##                failureCount[4]=1
+            moduleToTest[moduleNumber]=0 #Always skip for now
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Serial Flash...")
+                result5=testSerialFlash(GPIO,pinDict,x2,mbRetries) #Call the serial flash test module
+                print ("=====================")
+                print("Test result:",result5)
+                out_records.write(",%s" % (result5[0])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result5[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Serial Flash Testing Skipped...")
+                out_records.write(",skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test SD Card
-            print("\n------------------------------")
-            print("Testing the SD Card...")
-            result6=testSDCard(GPIO,pinDict,x2,mbRetries) #Call the SD Card test module
-            print ("=====================")
-            print("Test result:",result6)
-            out_records.write(",%s" % (result6[0])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result6[0]!="Pass"):
-                failureCount[5]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the SD Card...")
+                result6=testSDCard(GPIO,pinDict,x2,mbRetries) #Call the SD Card test module
+                print ("=====================")
+                print("Test result:",result6)
+                out_records.write(",%s" % (result6[0])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result6[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("SD Card Testing Skipped...")
+                out_records.write(",skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test Priority Power Switch
-            print("\n------------------------------")
-            print("Testing the Priority Power Switch...")
-            result7=testPrioPwrPathSW(GPIO,pinDict,x2,mbRetries) #Call the PPSW test module
-            print ("=====================")
-            print("Test result:",result7)
-            out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result7[0],result7[1],bin(result7[2]), #Write the results to the file
-                                                                     result7[3],result7[4],bin(result7[5]),
-                                                                     result7[6],result7[7],bin(result7[8]),
-                                                                     result7[9],bin(result7[10])))
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result7[0]!="Pass" or result7[3]!="Pass" or result7[6]!="Pass" or result7[9]!="Pass"):
-                failureCount[6]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Priority Power Switch...")
+                result7=testPrioPwrPathSW(GPIO,pinDict,x2,mbRetries) #Call the PPSW test module
+                print ("=====================")
+                print("Test result:",result7)
+                out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result7[0],result7[1],bin(result7[2]), #Write the results to the file
+                                                                         result7[3],result7[4],bin(result7[5]),
+                                                                         result7[6],result7[7],bin(result7[8]),
+                                                                         result7[9],bin(result7[10])))
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result7[0]=="Pass" and result7[3]=="Pass" and result7[6]=="Pass" and result7[9]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Priority Power Switch Testing Skipped...")
+                out_records.write(",skipped,skipped,skipped"
+                                  ",skipped,skipped,skipped"
+                                  ",skipped,skipped,skipped"
+                                  ",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
             
             #Test System Current
-            print("\n------------------------------")
-            print("Testing the System Current...")
-            result8=testSysCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
-            print ("=====================")
-            print("Test result:",result8)
-            out_records.write(",%s,%s" % (result8[0],result8[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result8[0]!="Pass"):
-                failureCount[7]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the System Current...")
+                result8=testSysCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
+                print ("=====================")
+                print("Test result:",result8)
+                out_records.write(",%s,%s" % (result8[0],result8[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result8[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("System Current Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
+                
 
             #Test the 12V SEPIC Converter
-            print("\n------------------------------")
-            print("Testing the 12V SEPIC Converter...")
-            result9=test12SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 12V SEPIC test module
-            print ("=====================")
-            print("Test result:",result9)
-            out_records.write(",%s,%s" % (result9[0],result9[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result9[0]!="Pass"):
-                failureCount[8]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the 12V SEPIC Converter...")
+                result9=test12SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 12V SEPIC test module
+                print ("=====================")
+                print("Test result:",result9)
+                out_records.write(",%s,%s" % (result9[0],result9[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result9[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("System Current Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the 5V LDO Converter
-            print("\n------------------------------")
-            print("Testing the 5V LDO Converter...")
-            result10=test5VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 5V LDO test module
-            print ("=====================")
-            print("Test result:",result10)
-            out_records.write(",%s,%s" % (result10[0],result10[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result10[0]!="Pass"):
-                failureCount[9]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the 5V LDO Converter...")
+                result10=test5VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 5V LDO test module
+                print ("=====================")
+                print("Test result:",result10)
+                out_records.write(",%s,%s" % (result10[0],result10[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result10[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("5V LDO Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the 12V Sensor Switch
-            print("\n------------------------------")
-            print("Testing the 12V Sensor Switch...")
-            result11=test12VSenSW(GPIO,pinDict,x2,mbRetries,spi) #Call the 12V Sensor Switch test module
-            print ("=====================")
-            print("Test result:",result11)
-            out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s" % (result11[0],result11[1], #Write the results to the file
-                                                            result11[2],result11[3],
-                                                            result11[4],result11[5],
-                                                            result11[6],result11[7]))
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result11[0]!="Pass" or result11[2]!="Pass" or result11[4]!="Pass" or result11[6]!="Pass"):
-                failureCount[10]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the 12V Sensor Switch...")
+                result11=test12VSenSW(GPIO,pinDict,x2,mbRetries,spi) #Call the 12V Sensor Switch test module
+                print ("=====================")
+                print("Test result:",result11)
+                out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s" % (result11[0],result11[1], #Write the results to the file
+                                                                result11[2],result11[3],
+                                                                result11[4],result11[5],
+                                                                result11[6],result11[7]))
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result11[0]=="Pass" and result11[2]=="Pass" and result11[4]=="Pass" and result11[6]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("12V Sensor Switch Testing Skipped...")
+                out_records.write(",skipped,skipped"
+                                  ",skipped,skipped"
+                                  ",skipped,skipped"
+                                  ",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test Sensor Current
-            print("\n------------------------------")
-            print("Testing the Sensor Current...")
-            result12=testSenCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
-            print ("=====================")
-            print("Test result:",result12)
-            out_records.write(",%s,%s" % (result12[0],result12[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result12[0]!="Pass"):
-                failureCount[11]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Sensor Current...")
+                result12=testSenCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
+                print ("=====================")
+                print("Test result:",result12)
+                out_records.write(",%s,%s" % (result12[0],result12[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result12[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Sensor Current Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
+                
 
             #Test Priority Power Out Switch
-            print("\n------------------------------")
-            print("Testing the Priority Power Out Switch...")
-            result13=testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi) #Call the priority power out switch test module
-            print ("=====================")
-            print("Test result:",result13)
-            out_records.write(",%s,%s,%s,%s" % (result13[0],result13[1],
-                                                result13[2],result13[3])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result13[0]!="Pass" or result13[2]!="Pass"):
-                failureCount[12]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Priority Power Out Switch...")
+                result13=testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi) #Call the priority power out switch test module
+                print ("=====================")
+                print("Test result:",result13)
+                out_records.write(",%s,%s,%s,%s" % (result13[0],result13[1],
+                                                    result13[2],result13[3])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result13[0]=="Pass" and result13[2]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Priority Power Out Switch Testing Skipped...")
+                out_records.write(",skipped,skipped"
+                                  ",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the Sensor Ports
-            print("\n------------------------------")
-            print("Testing the Sensor Ports...")
-            result14=testSensor(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the Sensor port test module
-            print ("=====================")
-            print("Test result:",result14)
-            out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result14[0],result14[1],result14[2],
-                                                               result14[3],result14[4],result14[5],
-                                                               result14[6],result14[7],result14[8],)) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result14[0]!="Pass" or result14[1]!="Pass" or result14[2]!="Pass" or
-               result14[3]!="Pass" or result14[4]!="Pass" or result14[5]!="Pass" or
-               result14[6]!="Pass" or result14[7]!="Pass" or result14[8]!="Pass"):
-                failureCount[13]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Sensor Ports...")
+                result14=testSensor(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the Sensor port test module
+                print ("=====================")
+                print("Test result:",result14)
+                out_records.write(",%s,%s,%s,%s,%s,%s,%s,%s,%s" % (result14[0],result14[1],result14[2],
+                                                                   result14[3],result14[4],result14[5],
+                                                                   result14[6],result14[7],result14[8],)) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result14[0]=="Pass" and result14[1]=="Pass" and result14[2]=="Pass" and
+                   result14[3]=="Pass" and result14[4]=="Pass" and result14[5]=="Pass" and
+                   result14[6]=="Pass" and result14[7]=="Pass" and result14[8]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Sensor Port Testing Skipped...")
+                out_records.write(",skipped,skipped,skipped"
+                                  ",skipped,skipped,skipped"
+                                  ",skipped,skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test Pressure/Temp/Humidity
-            print("\n------------------------------")
-            print("Testing the pressure, temperatur, and humidity chip...")
-            result15=testpressTempHum(GPIO,pinDict,x2,mbRetries) #Call the pressure temp. humidity test module
-            print ("=====================")
-            print("Test result:",result15)
-            out_records.write(",%s,%s,%s,%s,%s,%s,%s" % (result15[0],
-                                                         result15[1],result15[2],
-                                                         result15[3],result15[4],
-                                                         result15[5],result15[6])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result15[0]!="Pass" or result15[1]!="Pass" or result15[3]!="Pass" or result15[5]!="Pass"):
-                failureCount[14]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the pressure, temperatur, and humidity chip...")
+                result15=testpressTempHum(GPIO,pinDict,x2,mbRetries) #Call the pressure temp. humidity test module
+                print ("=====================")
+                print("Test result:",result15)
+                out_records.write(",%s,%s,%s,%s,%s,%s,%s" % (result15[0],
+                                                             result15[1],result15[2],
+                                                             result15[3],result15[4],
+                                                             result15[5],result15[6])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result15[0]=="Pass" and result15[1]=="Pass" and result15[3]=="Pass" and result15[5]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Pressure/Temp/Humidity Testing Skipped...")
+                out_records.write(",skipped"
+                                  ",skipped,skipped"
+                                  ",skipped,skipped"
+                                  ",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test Trigger
-            print("\n------------------------------")
-            print("Testing the Trigger Lines...")
-            result16=testTriggers(GPIO,pinDict,x2,mbRetries) #Call the trigger lines test module
-            print ("=====================")
-            print("Test result:",result16)
-            out_records.write(",%s,%s" % (result16[0],result16[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result16[0]!="Pass" or result16[1]!="Pass"):
-                failureCount[15]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Trigger Lines...")
+                result16=testTriggers(GPIO,pinDict,x2,mbRetries) #Call the trigger lines test module
+                print ("=====================")
+                print("Test result:",result16)
+                out_records.write(",%s,%s" % (result16[0],result16[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result16[0]=="Pass" and result16[1]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Trigger Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test RTU RS-485 Passthrough
-            print("\n------------------------------")
-            print("Testing the RS-485 Passthrough...")
-            result17=testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode) #Call the RS-485 Passthrough test module
-            print ("=====================")
-            print("Test result:",result17)
-            out_records.write(",%s" % (result17[0])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result17[0]!="Pass"):
-                failureCount[16]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the RS-485 Passthrough...")
+                result17=testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode) #Call the RS-485 Passthrough test module
+                print ("=====================")
+                print("Test result:",result17)
+                out_records.write(",%s" % (result17[0])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result17[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("RTU RS-485 Testing Skipped...")
+                out_records.write(",skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the Magnetic Switch
-            print("\n------------------------------")
-            print("Testing the Magnetic Switch...")
-            result18=testMagSW(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the magnetic switch test module
-            print ("=====================")
-            print("Test result:",result18)
-            out_records.write(",%s,%s,%s,%s,%s,%s" % (result18[0],result18[1],result18[2],
-                                                      result18[3],result18[4],result18[5])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result18[0]!="Pass" or result18[2]!="Pass" or result18[3]!="Pass" or result18[5]!="Pass"):
-                failureCount[17]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Magnetic Switch...")
+                result18=testMagSW(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the magnetic switch test module
+                print ("=====================")
+                print("Test result:",result18)
+                out_records.write(",%s,%s,%s,%s,%s,%s" % (result18[0],result18[1],result18[2],
+                                                          result18[3],result18[4],result18[5])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result18[0]=="Pass" and result18[2]=="Pass" and result18[3]=="Pass" and result18[5]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("Magnetic Switch Testing Skipped...")
+                out_records.write(",skipped,skipped,skipped"
+                                  ",skipped,skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test K64 LEDs
-            print("\n------------------------------")
-            print("Testing the K64 LEDs...")
-            result19=testK64LEDs(GPIO,pinDict,x2,mbRetries) #Call the K64 LEDs test module
-            print ("=====================")
-            print("Test result:",result19)
-            out_records.write(",%s" % (result19[0])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result19[0]!="Pass"):
-                failureCount[18]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the K64 LEDs...")
+                result19=testK64LEDs(GPIO,pinDict,x2,mbRetries) #Call the K64 LEDs test module
+                print ("=====================")
+                print("Test result:",result19)
+                out_records.write(",%s" % (result19[0])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result19[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("K64 LED Testing Skipped...")
+                out_records.write(",skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Test the Wi-Fi module (LEDs, Communication, Network)
-            print("\n------------------------------")
-            print("Testing the Wi-Fi Module...")
-            result20=testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
-            print ("=====================")
-            print("Test result:",result20)
-            out_records.write(",%s,%s" % (result20[0],result20[1])) #Write the result to the file
-            print("------------------------------\n")
-            #Mark if failure occured
-            if(result20[0]!="Pass" or result20[2]!="Pass"):
-                failureCount[19]=1
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                print("Testing the Wi-Fi Module...")
+                result20=testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
+                print ("=====================")
+                print("Test result:",result20)
+                out_records.write(",%s,%s" % (result20[0],result20[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result20[0]=="Pass" and result20[1]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                print("K64 LED Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1
 
             #Mark end of board itteration
             endTime=time.time()#Timestamp ending time
             itterationTime=round(endTime-startTime,1)
             out_records.write(",%s" % (itterationTime))
+            out_records.write("\n")#Line return to go to next record
+
+            #Reset the module increment counter
+            moduleNumber=0
 
             print("----------------------------------------------")
             print("Board SN:",sn,"Done Test Itteration")
@@ -483,11 +664,15 @@ def main():
             
 
             #Check for failed modules and allow retry
-            failures=sum(failureCount)
+            leftToTest=sum(moduleToTest)
             #If there were failures tell user and see if they want to rety those sections
-            if(failures>0):
+            if(leftToTest>0):
                 print("The curent board has finished testing all sections.\n"
-                      "There were",failures,"failures.")
+                      "There was/were",leftToTest,"failure(s).\n"
+                      "The failed sections are:")
+                for i in range(0,len(moduleToTest)):
+                    if(moduleToTest[i]):
+                        print(moduleName[i])
                 done=False
                 while not (done):
                     retrySections = input("Would you like to retry the failed sections? (y/n): ")
@@ -496,17 +681,21 @@ def main():
                         done=True
                     elif(retrySections == "n" or retrySections == "N"):
                         retryTest=False
-                        done=False
+                        done=True
                     else:
                         print("\nYou must enter y or n. Try again.\n")
             else:
+                retryTest=False
                 print("The board completed testing with no failures")
 
             #Decide whether to end itteration or re-loop
             if(retryTest):
                 retryAttempts = retryAttempts+1
-                sn = sn+" --RETRY-- "+retryAttemps
+                sn = sn[0:snlen]+" --RETRY-- "+str(retryAttempts)
             else:
+                #Reset the modules to test to the original for this program run
+                moduleToTest = masterModuleToTest
+
                 #Turn off the power
                 GPIO.output(pinDict["IO1"],GPIO.LOW)
                 GPIO.output(pinDict["IO2"],GPIO.LOW)
@@ -517,12 +706,11 @@ def main():
                 retryAttempts=0
                     
                 #End current board itteration
-                input("The current board has finished testing and is safe to remove.\n"
+                input("\nThe current board has finished testing and is safe to remove.\n"
                       "Please remember to remove the SD Card\n\n"
                       "Press Enter to continue\n")
 
                 #Prepare for next board
-                out_records.write("\n")#Line return to go to next record
                 out_records.flush()
                 sn = getSN(snlen) #Get new board SN
 
@@ -616,6 +804,28 @@ def enableDisable(x2,mbRetries,mbDictName,clearText,onOff):
         else:
             print("Disabling the",clearText,"was not successful")
             return False
+
+#Determine which modules should be tested
+def getModulesToTest():
+
+    shutil.copy2("/home/pi/Documents/GitHub/X2Tester/ModuleToTest.txt","/home/pi/Desktop/ModuleToTest.txt")
+
+    input("If only certain modules are to be tested for this run, please update the\n"
+          "ModuleToTest.txt file that is currently on the Desktop.\n\n"
+          "After making any modifications, please save the file and hit ENTER.\n"
+          "Otherwise just hit ENTER\n\n")               
+
+    in_moduleToTestFile=open("/home/pi/Desktop/ModuleToTest.txt", 'r')
+
+    moduleToTest=[]
+    for i in range(0,20):
+        moduleToTest.append(int(in_moduleToTestFile.readline()[0:1]))
+
+    in_moduleToTestFile.close()
+
+    os.remove("/home/pi/Desktop/ModuleToTest.txt")
+
+    return moduleToTest
 
 #Used to get the PCB's serial number and ensure it is valid
 def getSN(snlen):
@@ -1548,6 +1758,10 @@ def testSensor(GPIO,pinDict,x2,mbRetries,modbusTimeout):
     return [port0Status[0],port0Status[1],port0Status[2],
             port1Status[0],port1Status[1],port1Status[2],
             port2Status[0],port2Status[1],port2Status[2]]
+
+#Test the serial flash chip
+def testSerialFlash(GPIO,pinDict,x2,mbRetries):
+    return ["Test skipped"]
 
 #Test that the system current is reading correctly
 def testSysCur(GPIO,pinDict,x2,mbRetries):
