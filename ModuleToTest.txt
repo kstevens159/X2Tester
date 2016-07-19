@@ -1,26 +1,28 @@
-1: Mod1  - 3V LDO
-1: Mod2  - RS-485 driver, EE, and processor
-1: Mod3  - RTC Clock & Battery
-1: Mod4  - 3.3V SEPIC Converter
-0: Mod5  - Serial Flash
-1: Mod6  - SD Card
-1: Mod7  - Priority Power Switch
-1: Mod8  - System Current
-1: Mod9  - 12V SEPIC Converter
-1: Mod10 - 5V LDO
-1: Mod11 - 12V Sensor Switch
-1: Mod12 - Sensor Current
-1: Mod13 - Priority Power Out Switch
-1: Mod14 - Sensor Ports
-1: Mod15 - Pressure/Temp/Humidity Chip
-1: Mod16 - Triggers
-1: Mod17 - RTU RS-485 Passthrough
-1: Mod18 - Magnetic Switch
-1: Mod19 - K64 LEDs
-1: Mod20 - Wi-Fi Module
+1 : Mod1  - 3V LDO
+1 : Mod2  - RS-485 driver, EE, and processor
+1 : Mod3  - RTC Clock & Battery
+1 : Mod4  - 3.3V SEPIC Converter
+0 : Mod5  - Serial Flash
+1 : Mod6  - SD Card
+1 : Mod7  - Priority Power Switch
+1 : Mod8  - System Current
+1 : Mod9  - 12V SEPIC Converter
+1 : Mod10 - 5V LDO
+1 : Mod11 - 12V Sensor Switch
+1 : Mod12 - Sensor Current
+1 : Mod13 - Priority Power Out Switch
+1 : Mod14 - Sensor Ports
+1 : Mod15 - Pressure/Temp/Humidity Chip
+1 : Mod16 - Triggers
+1 : Mod17 - RTU RS-485 Passthrough
+1 : Mod18 - Magnetic Switch
+1 : Mod19 - K64 LEDs
+1 : Mod20 - Wi-Fi Module
 
 
 Change only the number before the :
+The program only reads the first character on each line.
+Ensure that this is either 0 or 1
 
 To run a module use a 1
 To not run a module use a 0

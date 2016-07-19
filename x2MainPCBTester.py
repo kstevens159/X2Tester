@@ -278,7 +278,7 @@ def main():
         while (sn != "-1"): #Loop through all PCBs to be tested
             startTime=time.time()#Timestamp beginning time
             logging.debug("-------------ITTERATION START FOR SN: %s -------------",sn)
-            
+
             out_records.write("%s" % sn) #Write serial number to file
 
             #Test the 3V LDO
@@ -289,7 +289,7 @@ def main():
                 print ("=====================")
                 logging.info("Test results:\n"
                              "3V LDO Status: %s\n"
-                             "3V LDO Voltage: %f"
+                             "3V LDO Voltage: %.3f"
                              ,result1[0],result1[1])
                 out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
                 print("------------------------------\n")
@@ -333,9 +333,9 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "RTC Battery Read Status: %s\n"
-                             "RTC Battery Voltage: %f\n"
+                             "RTC Battery Voltage: %.3f\n"
                              "RTC Clock Retention Status: %s\n"
-                             "RTC Clock Retention Difference: %f"
+                             "RTC Clock Retention Difference: %.3f"
                              ,result3[0],result3[1],result3[2],result3[3])
                 out_records.write(",%s,%s,%s,%s" % (result3[0],result3[1],result3[2],result3[3])) #Write the result to the file
                 print("------------------------------\n")
@@ -357,7 +357,7 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "3.3V SEPIC Status: %s\n"
-                             "3.3V SEPIC Voltage: %f"
+                             "3.3V SEPIC Voltage: %.3f"
                              ,result4[0],result4[1])
                 out_records.write(",%s,%s" % (result4[0],result4[1])) #Write the result to the file
                 print("------------------------------\n")
@@ -422,13 +422,13 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "Backup Power Switch Status: %s\n"
-                             "Backup Power Voltage: %f\n"
+                             "Backup Power Voltage: %.3f\n"
                              "Backup Valid Line Value: %s\n"
                              "Secondary Power Switch Status: %s\n"
-                             "Secondary Power Voltage: %f\n"
+                             "Secondary Power Voltage: %.3f\n"
                              "Secondary Valid Line Value: %s\n"
                              "Primary Power Switch Status: %s\n"
-                             "Primary Power Voltage: %f\n"
+                             "Primary Power Voltage: %.3f\n"
                              "Primary Valid Line Value: %s\n"
                              "PPP_1DISCON Status: %s\n"
                              "PPP_1DISCON Valid Line Value: %s"
@@ -462,7 +462,7 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "System Current Status: %s\n"
-                             "System Current Value: %f"
+                             "System Current Value: %.3f"
                              ,result8[0],result8[1])
                 out_records.write(",%s,%s" % (result8[0],result8[1])) #Write the result to the file
                 print("------------------------------\n")
@@ -485,7 +485,7 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "12V SEPIC Status: %s\n"
-                             "12V SEPIC Voltage: %f"
+                             "12V SEPIC Voltage: %.3f"
                              ,result9[0],result9[1])
                 out_records.write(",%s,%s" % (result9[0],result9[1])) #Write the result to the file
                 print("------------------------------\n")
@@ -507,7 +507,7 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "5V LDO Status: %s\n"
-                             "5V LDO Voltage: %f"
+                             "5V LDO Voltage: %.3f"
                              ,result10[0],result10[1])
                 out_records.write(",%s,%s" % (result10[0],result10[1])) #Write the result to the file
                 print("------------------------------\n")
@@ -529,13 +529,13 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "12 Sensor Power Switch A Status: %s\n"
-                             "12 Sensor Power Switch A Voltage: %f\n"
+                             "12 Sensor Power Switch A Voltage: %.3f\n"
                              "12 Sensor Power Switch B Status: %s\n"
-                             "12 Sensor Power Switch B Voltage: %f\n"
+                             "12 Sensor Power Switch B Voltage: %.3f\n"
                              "12 Sensor Power Switch C Status: %s\n"
-                             "12 Sensor Power Switch C Voltage: %f\n"
+                             "12 Sensor Power Switch C Voltage: %.3f\n"
                              "12 Sensor Power Switch D Status: %s\n"
-                             "12 Sensor Power Switch D Voltage: %f"
+                             "12 Sensor Power Switch D Voltage: %.3f"
                              ,result11[0],result11[1]
                              ,result11[2],result11[3]
                              ,result11[4],result11[5]
@@ -566,7 +566,7 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "12V Sensor Current Status: %s\n"
-                             "12V Sensor Current Value: %f"
+                             "12V Sensor Current Value: %.3f"
                              ,result12[0],result12[1])
                 out_records.write(",%s,%s" % (result12[0],result12[1])) #Write the result to the file
                 print("------------------------------\n")
@@ -589,9 +589,9 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "Priority Power Output 1 Status: %s\n"
-                             "Priority Power Output 1 Value: %f\n"
+                             "Priority Power Output 1 Value: %.3f\n"
                              "Priority Power Output 2 Status: %s\n"
-                             "Priority Power Output 2 Value: %f"
+                             "Priority Power Output 2 Value: %.3f"
                              ,result13[0],result13[1]
                              ,result13[2],result13[3])
                 out_records.write(",%s,%s,%s,%s" % (result13[0],result13[1],
@@ -654,11 +654,11 @@ def main():
                 logging.info("Test result:\n"
                              "Pressure/Temp/Humidity Chip Status: %s\n"
                              "Pressure Status: %s\n"
-                             "Pressure Reading: %f\n"
+                             "Pressure Reading: %.3f\n"
                              "Temperature Status: %s\n"
-                             "Temperature Reading: %f\n"
+                             "Temperature Reading: %.3f\n"
                              "Humidity Status: %s\n"
-                             "Humidity Reading: %f"
+                             "Humidity Reading: %.3f"
                              ,result15[0]
                              ,result15[1],result15[2]
                              ,result15[3],result15[4]
@@ -732,10 +732,10 @@ def main():
                 print("=====================")
                 logging.info("Test result:\n"
                              "Magnetic Switch 1 Read Status: %s\n"
-                             "Magnetic Switch 1 Time Difference: %f\n"
+                             "Magnetic Switch 1 Time Difference: %.3f\n"
                              "Magnetic Switch 1 LED Status: %s\n"
                              "Magnetic Switch 2 Read Status: %s\n"
-                             "Magnetic Switch 2 Time Difference: %f\n"
+                             "Magnetic Switch 2 Time Difference: %.3f\n"
                              "Magnetic Switch 2 LED Status: %s"
                              ,result18[0],result18[1],result18[2]
                              ,result18[3],result18[4],result18[5])
@@ -809,7 +809,7 @@ def main():
 
             print("----------------------------------------------")
             logging.info("Board SN: %s has completed its itteration",sn)
-            logging.info("The test took a total of %d seconds",itterationTime)
+            logging.info("The test took a total of %.3f seconds",itterationTime)
             print("----------------------------------------------\n\n")
             
 
@@ -1142,7 +1142,7 @@ def prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,mbDictName,validCheck,validValu
     readResult1 = mbReadFloatRetries(x2,Reg.mbReg[mbDictName][0],Reg.mbReg[mbDictName][1],retries=mbRetries)
     if(readResult1):
         chVoltage=readResult1[0]
-        logging.debug("The channel voltage level is %f\n",chVoltage)
+        logging.debug("The channel voltage level is %.3f\n",chVoltage)
         
         #Check if voltage is in range
         rangeCheck=valueRangeCheck(12.0,2,chVoltage)#Expected, tolerance, test input
@@ -1209,7 +1209,7 @@ def sensor12VSW(GPIO,pinDict,x2,mbRetries,spi,mbDictName,clearText,spiCh):
         logging.debug("Reading 12V %s Voltage...",clearText)
         scaling=scaleValue(27.4,10) #Determine voltage divider scaling value
         analog = readAnalog(spi,spiCh,scaling) #Read SPI0 ch. 1
-        logging.debug("The read voltage is %f\n",analog)
+        logging.debug("The read voltage is %.3f\n",analog)
 
         #Check if voltage is in range and return the result
         rangeCheck=valueRangeCheck(12,0.5,analog)#Expected, tolerance, test input
@@ -1269,7 +1269,7 @@ def test12SEPIC(GPIO,pinDict,x2,mbRetries):
     logging.debug("Reading 12V SEPIC Voltage...")
     readResult = mbReadFloatRetries(x2,Reg.mbReg["12VSen_V"][0],Reg.mbReg["12VSen_V"][1],retries=mbRetries)
     if(readResult):
-        logging.debug("The 12V SEPIC voltage level is %f\n",readResult[0])
+        logging.debug("The 12V SEPIC voltage level is %.3f\n",readResult[0])
 
         #Check if voltage is in range and return the result
         rangeCheck=valueRangeCheck(12,0.5,readResult[0])#Expected, tolerance, test input
@@ -1330,7 +1330,7 @@ def test33SEPIC(GPIO,pinDict,x2,mbRetries):
     logging.debug("\nReading 3.3V SEPIC Voltage...")
     readResult = mbReadFloatRetries(x2,Reg.mbReg["VCC33_V"][0],Reg.mbReg["VCC33_V"][1],retries=mbRetries)
     if(readResult):
-        logging.debug("The 3.3V SEPIC voltage level is %f",readResult[0])
+        logging.debug("The 3.3V SEPIC voltage level is %.3f",readResult[0])
 
         #Check if voltage is in range and return the result
         rangeCheck=valueRangeCheck(3.3,0.1,readResult[0])#Expected, tolerance, test input
@@ -1347,7 +1347,7 @@ def test3VLDO(GPIO,pinDict,x2,mbRetries,spi):
 
     logging.debug("\nReading 3V LDO Voltage...")
     analog0 = readAnalog(spi,0) #Read SPI0 ch. 0
-    logging.debug("The read voltage is %f",analog0)
+    logging.debug("The read voltage is %.3f",analog0)
 
     #Check if voltage is in range and return the result
     rangeCheck=valueRangeCheck(3.0,0.3,analog0)#Expected, tolerance, test input
@@ -1369,7 +1369,7 @@ def test5VLDO(GPIO,pinDict,x2,mbRetries,spi):
         logging.debug("\nReading 5V LDO Voltage...")
         scaling=scaleValue(6.04,10)
         analog1 = readAnalog(spi,1,scaling) #Read SPI0 ch. 1
-        logging.debug("The read voltage is %f",analog1)
+        logging.debug("The read voltage is %.3f",analog1)
 
         #Check if voltage is in range and return the result
         rangeCheck=valueRangeCheck(5.0,0.1,analog1)#Expected, tolerance, test input
@@ -1467,7 +1467,7 @@ def testpressTempHum(GPIO,pinDict,x2,mbRetries):
         pressureRaw=[readResult[0],readResult[1]]#First two registers are for pressure
         pressureComb=combineFrom16Bits(pressureRaw)#Combine into a single value
         pressureValue=round(struct.unpack('!f',bytes.fromhex(hex(pressureComb)[2:]))[0],3)#Convert to IEEE floating point
-        logging.debug("\nThe pressure reading is: %f mBar\n",pressureValue)
+        logging.debug("\nThe pressure reading is: %.3f mBar\n",pressureValue)
 
         #Check pressure is in range
         [checkState1,pressureStatus]=valueRangeCheck(1000,500,pressureValue)#Expected, tolerance, test input
@@ -1476,7 +1476,7 @@ def testpressTempHum(GPIO,pinDict,x2,mbRetries):
         temperatureRaw=[readResult[2],readResult[3]]#Next two registers are for temperature
         temperatureComb=combineFrom16Bits(temperatureRaw)#Combine into a single value
         temperatureValue=round(struct.unpack('!f',bytes.fromhex(hex(temperatureComb)[2:]))[0],3)#Convert to IEEE floating point
-        logging.debug("\nThe temperature reading is: %f degrees C\n",temperatureValue)
+        logging.debug("\nThe temperature reading is: %.3f degrees C\n",temperatureValue)
 
         #Check temperature is in range
         [checkState2,temperatureStatus]=valueRangeCheck(20,15,temperatureValue)#Expected, tolerance, test input
@@ -1485,7 +1485,7 @@ def testpressTempHum(GPIO,pinDict,x2,mbRetries):
         humidityRaw=[readResult[4],readResult[5]]#Last two registers are for humidity
         humidityComb=combineFrom16Bits(humidityRaw)#Combine into a single value
         humidityValue=round(struct.unpack('!f',bytes.fromhex(hex(humidityComb)[2:]))[0],3)#Convert to IEEE floating point
-        logging.debug("\nThe humidity reading is: %f percent\n",humidityValue)
+        logging.debug("\nThe humidity reading is: %.3f percent\n",humidityValue)
 
         #Check humidity is in range
         [checkState3,humidityStatus]=valueRangeCheck(50,45,humidityValue)#Expected, tolerance, test input
@@ -1513,8 +1513,8 @@ def testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi):
         scaling=scaleValue(82.5,10)#Voltage divider X factor
         analog6 = readAnalog(spi,6,scaling) #Read SPI0 ch. 6
         analog7 = readAnalog(spi,7,scaling) #Read SPI0 ch. 7
-        logging.debug("The J7 board to board read voltage is %f",analog6)
-        logging.debug("The J3 JST read voltage is %f\n",analog7)
+        logging.debug("The J7 board to board read voltage is %.3f",analog6)
+        logging.debug("The J3 JST read voltage is %.3f\n",analog7)
 
         #Check if voltage is in range and return the result
         rangeCheck1=valueRangeCheck(12,1,analog6)#Expected, tolerance, test input
@@ -1694,7 +1694,7 @@ def testRTC(GPIO,pinDict,x2,mbRetries):
     RTCRawResult = mbReadFloatRetries(x2,Reg.mbReg["RTCBAT_V"][0],Reg.mbReg["RTCBAT_V"][1],retries=mbRetries)
     if(RTCRawResult):
         RTCVoltageValueResult = RTCRawResult[0]
-        logging.debug("The RTC Battery voltage is %f\n",RTCVoltageValueResult)
+        logging.debug("The RTC Battery voltage is %.3f\n",RTCVoltageValueResult)
         [rangeCheck,RTCVoltageRangeResult]=valueRangeCheck(3.0,0.2,RTCVoltageValueResult)
     else:
         logging.debug("The RTC Battery voltage read was not successful\n")
@@ -2008,13 +2008,13 @@ def valueRangeCheck(level,threshold,read):
     logging.debug("Checking if reading is in range...")
     if (read > level-threshold):
         if (read < level+threshold):
-            logging.debug("Reading is in range. It is %f",read)
+            logging.debug("Reading is in range. It is %.3f",read)
             return [True,"Pass"]
         else:
-            logging.debug("Reading is too high. It is %f",read)
+            logging.debug("Reading is too high. It is %.3f",read)
             return [False,"Fail-Reading high"]
     else:
-        logging.debug("Reading is too low. It is %f",read)
+        logging.debug("Reading is too low. It is %.3f",read)
         return [False,"Fail-Reading low"]
 
 #Search for a specified Wi-Fi network
