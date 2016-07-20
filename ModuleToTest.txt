@@ -15,9 +15,10 @@
 1 : Mod15 - Pressure/Temp/Humidity Chip
 1 : Mod16 - Triggers
 1 : Mod17 - RTU RS-485 Passthrough
-1 : Mod18 - Magnetic Switch
-1 : Mod19 - K64 LEDs
-1 : Mod20 - Wi-Fi Module
+1 : Mod18 - Wi-Fi Module
+1 : Mod19 - Magnetic Switch
+1 : Mod20 - K64 LEDs
+
 
 
 Change only the number before the :

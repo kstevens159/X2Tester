@@ -1,7 +1,5 @@
 #!/bin/bash
 # launcher.sh
 
-cd /
-cd /home/pi/Documents/GitHub/X2Tester
-sudo python x2MainPCBTester.py
-cd /
+sudo python3 /home/pi/Documents/GitHub/X2Tester/x2MainPCBTester.py
+

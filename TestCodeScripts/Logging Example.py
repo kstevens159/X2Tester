@@ -2,9 +2,14 @@ import logging
 import logging.handlers
 import os
 
+logging.IMPORTANT = 25
+logging.addLevelName(logging.IMPORTANT, "IMPORTANT")
+logging.Logger.important = lambda inst, msg, *args, **kwargs: inst.log(logging.IMPORTANT, msg, *args, **kwargs)
+logging.important = lambda msg, *args, **kwargs: logging.log(logging.IMPORTANT, msg, *args, **kwargs)
+
 #Setup log file name and log levels
 log_file_name = "testLogFile.log"
-log_level_console = logging.INFO
+log_level_console = logging.IMPORTANT
 log_level_file = logging.DEBUG
 
 #Create the logger
@@ -31,7 +36,7 @@ logger.addHandler(logger_console)
 
 sn=4
 
-logging.info("Serial Number: %d",sn)
+logging.important("Serial Number: %d",sn)
 logging.debug("Test output 1")
 logging.info("Test output 2")
 logging.warning("Test output 3")
