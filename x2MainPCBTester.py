@@ -395,6 +395,7 @@ def main():
                 logging.important("Module 7 - Testing the Priority Power Switch...")
                 result7=testPrioPwrPathSW(GPIO,pinDict,x2,mbRetries) #Call the PPSW test module
                 print("=====================")
+                print(result7)
                 logging.important("Test result:\n"
                              "Backup Power Switch Status: %s\n"
                              "Secondary Power Switch Status: %s\n"
@@ -875,18 +876,18 @@ def main():
         logging.error("The program was cancelled by a keyboard interrupt!\n")
         print("==============================\n")
         input("Press Enter to exit\n")
-    except Exception as error:
-        out_records.write(",PROGRAM ERROR,")
-        out_records.write(str(error))
-        out_records.write("\n")#Line return to go to next record
-        out_records.flush()
-        print("\n==============================\n")
-        logging.error("The program encountered the following error!\n")
-        logging.error("Error Type: %s", type(error))
-        logging.error(error.args)
-        logging.error(error)
-        print("==============================\n")
-        input("Press Enter to exit\n")
+##    except Exception as error:
+##        out_records.write(",PROGRAM ERROR,")
+##        out_records.write(str(error))
+##        out_records.write("\n")#Line return to go to next record
+##        out_records.flush()
+##        print("\n==============================\n")
+##        logging.error("The program encountered the following error!\n")
+##        logging.error("Error Type: %s", type(error))
+##        logging.error(error.args)
+##        logging.error(error)
+##        print("==============================\n")
+##        input("Press Enter to exit\n")
     finally:
         logging.important("Cleaning up and exiting...")
         out_records.close #Close the file
@@ -1059,9 +1060,11 @@ def magSWCheck(x2,mbRetries,mbDictName,magSWNum):
                 magReadStat="Fail-Time between last read and current time is too great"
         else:
             logging.debug("Reading time since last magnet trigger was not successful")
+            timeDiff=-999999
             magReadStat="Fail-Reading time since last magnet trigger was not successful"
     else:
         logging.debug("Reading current time was not successful")
+        timeDiff=-999999
         magReadStat="Fail-Reading current time was not successful"
 
     return [magReadStat,timeDiff,magLEDStat]
@@ -1151,7 +1154,7 @@ def prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,mbDictName,validCheck,validValu
         chVoltageStat=rangeCheck[0]#True if in range and False if out of range
     else:
         logging.debug("The channel voltage read was not successful\n")
-        chVoltage="Fail-Reading the channel voltage was not successful"
+        chVoltage=-999999
         chVoltageStat=False
 
     if(validCheck):#Only try if the 3.3V SEPIC was turned on successfully
@@ -1170,11 +1173,11 @@ def prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,mbDictName,validCheck,validValu
                 chValidStat=False
         else:
             logging.debug("Reading the valid lines was not successful")
-            chValid="Fail-Reading the valid lines was not successful"
+            chValid=-999999
             chValidStat=False
     else:
         chValidStat=False
-        chValid="Fail-Enabling 3.3V SEPIC was not successful"
+        chValid=-999999
 
     #Check if the overall input was successful
     if(chVoltageStat and chValidStat):
@@ -1455,7 +1458,8 @@ def testpressTempHum(GPIO,pinDict,x2,mbRetries):
 
     #Enable the 3.3V SEPIC
     if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1) == False):
-        return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999,
+        return ["Fail-Enabling the 3.3V SEPIC was not successful",
+                "Fail-Enabling the 3.3V SEPIC was not successful",-999999,
                 "Fail-Enabling the 3.3V SEPIC was not successful",-999999,
                 "Fail-Enabling the 3.3V SEPIC was not successful",-999999]
 
