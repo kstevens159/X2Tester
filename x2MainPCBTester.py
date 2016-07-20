@@ -252,7 +252,7 @@ def main():
             #Test the 3V LDO
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the 3V LDO...")
+                logging.important("Module 1 - Testing the 3V LDO...")
                 result1=test3VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 3V LDO test module
                 print ("=====================")
                 logging.important("Test results:\n"
@@ -268,7 +268,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("3V LDO Testing Skipped...")
+                logging.important("Module 1 - 3V LDO Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -276,7 +276,7 @@ def main():
             #Test the RS-485 driver, EE and processor
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Processor, EE, & RS-485 Modbus Communication...")
+                logging.important("Module 2 - Testing the Processor, EE, & RS-485 Modbus Communication...")
                 result2=testProcEEAndRS485(GPIO,pinDict,x2,mbRetries) #Call the Processor and RS-485 test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -290,7 +290,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Processor, EE, & RS-485 Testing Skipped...")
+                logging.important("Module 2 - Processor, EE, & RS-485 Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -298,7 +298,7 @@ def main():
             #Test the RTC Clock & Battery
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the RTC Clock...")
+                logging.important("Module 3 - Testing the RTC Clock...")
                 result3=testRTC(GPIO,pinDict,x2,mbRetries) #Call the RTC Test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -316,7 +316,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("RTC Clock & Battery Testing Skipped...")
+                logging.important("Module 3 - RTC Clock & Battery Testing Skipped...")
                 out_records.write(",skipped,skipped,skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -324,7 +324,7 @@ def main():
             #Test the 3.3V SEPIC Converter
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the 3.3V SEPIC Converter...")
+                logging.important("Module 4 - Testing the 3.3V SEPIC Converter...")
                 result4=test33SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 3.3V SEPIC test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -340,7 +340,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("3.3V SEPIC Testing Skipped...")
+                logging.important("Module 4 - 3.3V SEPIC Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -349,7 +349,7 @@ def main():
             moduleToTest[moduleNumber]=0 #Always skip for now
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Serial Flash...")
+                logging.important("Module 5 - Testing the Serial Flash...")
                 result5=testSerialFlash(GPIO,pinDict,x2,mbRetries) #Call the serial flash test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -362,7 +362,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Serial Flash Testing Skipped...")
+                logging.important("Module 5 - Serial Flash Testing Skipped...")
                 out_records.write(",skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -370,7 +370,7 @@ def main():
             #Test SD Card
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the SD Card...")
+                logging.important("Module 6 - Testing the SD Card...")
                 result6=testSDCard(GPIO,pinDict,x2,mbRetries) #Call the SD Card test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -383,7 +383,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("SD Card Testing Skipped...")
+                logging.important("Module 6 - SD Card Testing Skipped...")
                 out_records.write(",skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -391,7 +391,7 @@ def main():
             #Test Priority Power Switch
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Priority Power Switch...")
+                logging.important("Module 7 - Testing the Priority Power Switch...")
                 result7=testPrioPwrPathSW(GPIO,pinDict,x2,mbRetries) #Call the PPSW test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -425,7 +425,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Priority Power Switch Testing Skipped...")
+                logging.important("Module 7 - Priority Power Switch Testing Skipped...")
                 out_records.write(",skipped,skipped,skipped"
                                   ",skipped,skipped,skipped"
                                   ",skipped,skipped,skipped"
@@ -436,7 +436,7 @@ def main():
             #Test System Current
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the System Current...")
+                logging.important("Module 8 - Testing the System Current...")
                 result8=testSysCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -452,7 +452,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("System Current Testing Skipped...")
+                logging.important("Module 8 - System Current Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -461,7 +461,7 @@ def main():
             #Test the 12V SEPIC Converter
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the 12V SEPIC Converter...")
+                logging.important("Module 9 - Testing the 12V SEPIC Converter...")
                 result9=test12SEPIC(GPIO,pinDict,x2,mbRetries) #Call the 12V SEPIC test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -477,7 +477,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("System Current Testing Skipped...")
+                logging.important("Module 9 - System Current Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -485,7 +485,7 @@ def main():
             #Test the 5V LDO Converter
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the 5V LDO Converter...")
+                logging.important("Module 10 - Testing the 5V LDO Converter...")
                 result10=test5VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 5V LDO test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -501,7 +501,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("5V LDO Testing Skipped...")
+                logging.important("Module 10 - 5V LDO Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -509,7 +509,7 @@ def main():
             #Test the 12V Sensor Switch
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the 12V Sensor Switch...")
+                logging.important("Module 11 - Testing the 12V Sensor Switch...")
                 result11=test12VSenSW(GPIO,pinDict,x2,mbRetries,spi) #Call the 12V Sensor Switch test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -540,7 +540,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("12V Sensor Switch Testing Skipped...")
+                logging.important("Module 11 - 12V Sensor Switch Testing Skipped...")
                 out_records.write(",skipped,skipped"
                                   ",skipped,skipped"
                                   ",skipped,skipped"
@@ -551,7 +551,7 @@ def main():
             #Test Sensor Current
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Sensor Current...")
+                logging.important("Module 12 - Testing the Sensor Current...")
                 result12=testSenCur(GPIO,pinDict,x2,mbRetries) #Call the system current test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -567,7 +567,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Sensor Current Testing Skipped...")
+                logging.important("Module 12 - Sensor Current Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -576,7 +576,7 @@ def main():
             #Test Priority Power Out Switch
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Priority Power Out Switch...")
+                logging.important("Module 13 - Testing the Priority Power Out Switch...")
                 result13=testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi) #Call the priority power out switch test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -597,7 +597,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Priority Power Out Switch Testing Skipped...")
+                logging.important("Module 13 - Priority Power Out Switch Testing Skipped...")
                 out_records.write(",skipped,skipped"
                                   ",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
@@ -606,7 +606,7 @@ def main():
             #Test the Sensor Ports
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Sensor Ports...")
+                logging.important("Module 14 - Testing the Sensor Ports...")
                 result14=testSensor(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the Sensor port test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -633,7 +633,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Sensor Port Testing Skipped...")
+                logging.important("Module 14 - Sensor Port Testing Skipped...")
                 out_records.write(",skipped,skipped,skipped"
                                   ",skipped,skipped,skipped"
                                   ",skipped,skipped,skipped") #Write the result to the file
@@ -643,7 +643,7 @@ def main():
             #Test Pressure/Temp/Humidity
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the pressure, temperature, and humidity chip...")
+                logging.important("Module 15 - Testing the pressure, temperature, and humidity chip...")
                 result15=testpressTempHum(GPIO,pinDict,x2,mbRetries) #Call the pressure temp. humidity test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -672,7 +672,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Pressure/Temp/Humidity Testing Skipped...")
+                logging.important("Module 15 - Pressure/Temp/Humidity Testing Skipped...")
                 out_records.write(",skipped"
                                   ",skipped,skipped"
                                   ",skipped,skipped"
@@ -683,7 +683,7 @@ def main():
             #Test Trigger
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Trigger Lines...")
+                logging.important("Module 16 - Testing the Trigger Lines...")
                 result16=testTriggers(GPIO,pinDict,x2,mbRetries) #Call the trigger lines test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -697,7 +697,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Trigger Testing Skipped...")
+                logging.important("Module 16 - Trigger Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -705,7 +705,7 @@ def main():
             #Test RTU RS-485 Passthrough
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the RS-485 Passthrough...")
+                logging.important("Module 17 - Testing the RS-485 Passthrough...")
                 result17=testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode) #Call the RS-485 Passthrough test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -718,7 +718,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("RTU RS-485 Testing Skipped...")
+                logging.important("Module 17 - RTU RS-485 Testing Skipped...")
                 out_records.write(",skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -726,7 +726,7 @@ def main():
             #Test the Wi-Fi module (LEDs, Communication, Network)
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Wi-Fi Module...")
+                logging.important("Module 18 - Testing the Wi-Fi Module...")
                 result18=testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries) #Call the Processor and RS-485 test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -740,7 +740,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Wi-Fi Module Testing Skipped...")
+                logging.important("Module 18 - Wi-Fi Module Testing Skipped...")
                 out_records.write(",skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -748,7 +748,7 @@ def main():
             #Test the Magnetic Switch
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the Magnetic Switch...")
+                logging.important("Module 19 - Testing the Magnetic Switch...")
                 result19=testMagSW(GPIO,pinDict,x2,mbRetries,modbusTimeout) #Call the magnetic switch test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -771,7 +771,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("Magnetic Switch Testing Skipped...")
+                logging.important("Module 19 - Magnetic Switch Testing Skipped...")
                 out_records.write(",skipped,skipped,skipped"
                                   ",skipped,skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
@@ -780,7 +780,7 @@ def main():
             #Test K64 LEDs
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
-                logging.important("Testing the K64 LEDs...")
+                logging.important("Module 20 - Testing the K64 LEDs...")
                 result20=testK64LEDs(GPIO,pinDict,x2,mbRetries) #Call the K64 LEDs test module
                 print("=====================")
                 logging.important("Test result:\n"
@@ -793,7 +793,7 @@ def main():
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
-                logging.important("K64 LED Testing Skipped...")
+                logging.important("Module 20 - K64 LED Testing Skipped...")
                 out_records.write(",skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
@@ -846,7 +846,7 @@ def main():
                 sn = sn[0:snlen]+" --RETRY-- "+str(retryAttempts) #Set the serial number to "xxxx --Retry-- y"
             else:
                 #Reset the modules for the next boards itteration to the original selection for this program run
-                moduleToTest = masterModuleToTest
+                moduleToTest = list(masterModuleToTest)
 
                 #Turn off the power
                 GPIO.output(pinDict["IO1"],GPIO.LOW)
@@ -2019,32 +2019,40 @@ def valueRangeCheck(level,threshold,read):
         return [False,"Fail-Reading low"]
 
 #Search for a specified Wi-Fi network
-def wifiNetworkSearch(wifiNetwork,wifiRetries,sleepSec=2):  
-    logging.debug("Looking for an X2 Wi-Fi network...")
-    for i in range(0,wifiRetries):
-        ssids=[cell.ssid for cell in Cell.all('wlan0')]
-        logging.debug("\nList of all networks found: ")
-        for value in ssids: #loop through and print found network names
-            logging.debug(value)
-        for ssid in ssids: #loop through found networks and scan for SSID
-            if (wifiNetwork in ssid):
-                done=True
-                logging.debug("Attempt %d of %d was successful",i+1,wifiRetries)
-                logging.debug("Found network: %s",ssid)
-                break
-            else:
-                done=False
-        if(done):
-            logging.debug("Successfully found the Wi-Fi network\n")
-            return "Pass"
-        else:
-            logging.debug("Failed to find a network with %s in it on attempt %d of %d", wifiNetwork, i+1, wifiRetries)
-            if(i+1<wifiRetries):
-                logging.debug("Waiting %d seconds and retrying...",sleepSec)
-                time.sleep(sleepSec)
-            else:
-                logging.debug("Failed to find X2 network\n")
-                return "Fail-Network not found"
+def wifiNetworkSearch(wifiNetwork,wifiRetries,sleepSec=2):
+    for k in range(0,3): #Sometimes this will fail if the system is trying to access at the same time
+        try:
+            logging.debug("Looking for an X2 Wi-Fi network...")
+            for i in range(0,wifiRetries):
+                ssids=[cell.ssid for cell in Cell.all('wlan0')]
+                logging.debug("\nList of all networks found: ")
+                for value in ssids: #loop through and print found network names
+                    logging.debug(value)
+                for ssid in ssids: #loop through found networks and scan for SSID
+                    if (wifiNetwork in ssid):
+                        done=True
+                        logging.debug("Attempt %d of %d was successful",i+1,wifiRetries)
+                        logging.debug("Found network: %s",ssid)
+                        break
+                    else:
+                        done=False
+                if(done):
+                    logging.debug("Successfully found the Wi-Fi network\n")
+                    return "Pass"
+                else:
+                    logging.debug("Failed to find a network with %s in it on attempt %d of %d", wifiNetwork, i+1, wifiRetries)
+                    if(i+1<wifiRetries):
+                        logging.debug("Waiting %d seconds and retrying...",sleepSec)
+                        time.sleep(sleepSec)
+                    else:
+                        logging.debug("Failed to find X2 network\n")
+                        return "Fail-Network not found"
+        except:
+            time.sleep(2)
+            logging.debug("Wi-Fi network resource busy on attempt %d of 3",k+1)
+            pass
+    else:
+        return "Fail-RPi was using the Wi-Fi resource"
 
 #This function replaces the standard minimalmodbus address range (0-247) with an extended range (0-255)
 def _checkSlaveaddress(slaveaddress):
