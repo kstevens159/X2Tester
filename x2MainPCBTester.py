@@ -235,7 +235,17 @@ def main():
                               "Wi-Fi LED and Communication Status,"                                                
                               "Itteration Time,"
                               "\n")
-        
+            
+        ##################
+        ## Welcome User ##
+        ##################
+
+        logging.info("Welcome to the X2 Main PCB Test Program.\n"
+             "To end the program at any point please enter CTRL-C.\n\n"
+             "Please follow along with the prompts to complete testing.\n"
+             "All results are automatically stored on this device and can be\n"
+             "accessed at a later time.\n\n"
+             "Contact NexSens Technology (937-426-2703) with any questions.\n")
 
         
         ######################
@@ -873,18 +883,18 @@ def main():
         logging.error("The program was cancelled by a keyboard interrupt!\n")
         print("==============================\n")
         input("Press Enter to exit\n")
-    except Exception as error:
-        out_records.write(",PROGRAM ERROR,")
-        out_records.write(str(error))
-        out_records.write("\n")#Line return to go to next record
-        out_records.flush()
-        print("\n==============================\n")
-        logging.error("The program encountered the following error!\n")
-        logging.error("Error Type: %s", type(error))
-        logging.error(error.args)
-        logging.error(error)
-        print("==============================\n")
-        input("Press Enter to exit\n")
+##    except Exception as error:
+##        out_records.write(",PROGRAM ERROR,")
+##        out_records.write(str(error))
+##        out_records.write("\n")#Line return to go to next record
+##        out_records.flush()
+##        print("\n==============================\n")
+##        logging.error("The program encountered the following error!\n")
+##        logging.error("Error Type: %s", type(error))
+##        logging.error(error.args)
+##        logging.error(error)
+##        print("==============================\n")
+##        input("Press Enter to exit\n")
     finally:
         logging.info("Cleaning up and exiting...")
         out_records.close #Close the file
@@ -989,8 +999,8 @@ def getSN(snlen):
     #Get the SN from the user
     sn = input("Please do the following (Enter -1 if done):\n"
                "1) Insert the SD Card\n"
-               "2) Connect the PCB\n"
-               "3) Enter the PCB's serial number followed by ENTER\n"
+               "2) Connect the PCB to the tester\n"
+               "3) Enter the PCB's serial number ("+str(snlen)+" characters) followed by ENTER\n"
                "Serial Number: ")
 
     #Confirm the SN is the right number of digits
