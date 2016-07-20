@@ -66,12 +66,25 @@ def main():
     GPIO.setup(pinDict["TRIGGER1"], GPIO.IN)
     GPIO.setup(pinDict["TRIGGER2"], GPIO.IN)
 
+    #Power on X2
+    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    #Enable the 3.3V SEPIC
+    enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)
+    #Enable the Wi-Fi Module
+    enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",1)
+
+    logging.debug("Waiting for Wi-Fi to boot fully before proceeding...")
+    time.sleep(8)#Need to delay until Wi-Fi is fully booted and done communicating to K64
 
     for i in range(0,1000):
+
         logging.debug("\n\n\n"
                       "------------- ITTERATION START  -------------")
         logging.debug("------------- %s -------------",time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(time.time())))
         logging.debug("------------- Run %d -------------\n\n\n",i)
+
+        #Enable the Wi-Fi Module
+        enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",1) #Sent inside the loop to keep the Wi-Fi on (otherwise it sleeps)
         
         testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries)
 
@@ -190,25 +203,10 @@ def powerOn(x2,mbRetries,GPIO,pinDict,pinValue,delay=3):
 #Test the Wi-Fi module is operating correctly
 def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
-
-    #Enable the 3.3V SEPIC
-    if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)== False):
-        return ["Fail-Enabling the 3.3V SEPIC was not successful",
-                "Fail-Enabling the 3.3V SEPIC was not successful"]
-    #Enable the Wi-Fi Module
-    if(enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",1)== False):
-        return ["Fail-Enabling the Wi-Fi Module was not successful",
-                "Fail-Enabling the Wi-Fi Module was not successful"]
-
-    logging.debug("Waiting for Wi-Fi to boot fully before proceeding...")
-    time.sleep(8)#Need to delay until Wi-Fi is fully booted and done communicating to K64
+    
     
     #Search for Wi-Fi network name
     networkStatus=wifiNetworkSearch(wifiNetwork,wifiRetries,sleepSec=2)
-
-    #Disable Wi-Fi Module
-    enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
 
 #Search for a specified Wi-Fi network
 def wifiNetworkSearch(wifiNetwork,wifiRetries,sleepSec=2):
