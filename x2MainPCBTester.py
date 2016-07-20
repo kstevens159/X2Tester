@@ -2076,16 +2076,22 @@ if __name__ == "__main__":
     logging.important = lambda msg, *args, **kwargs: logging.log(logging.IMPORTANT, msg, *args, **kwargs)
 
     #Determine Console logging settings
-    pw = input("Please enter the password followed by ENTER to enable advanced output.\n"
-               "Hit ENTER for standard use.\n"
-               "Password: ")
-    if(pw=="NexSensAdv"):
-        print("Welcome NexSens User - All messages with be printed to console\n\n")
+    pw = eval(input("Please select the level of output for this program run.\n"
+                    "1=User - Only pass/fail test result information is displayed.\n"
+                    "2=Advanced - Pass/fail and recorded value test result information is displayed.\n"
+                    "3=Admin - All process and test result infomration is displayed.\n"
+                    "Selection: "))
+    if(pw==3):
+        print("Welcome Admin User - All messages with be printed to console\n\n")
         log_level_console = logging.DEBUG #For NexSens Use
-    elif(pw=="NexSens"):
+    elif(pw==2):
         print("Welcome Advanced User - All test result messages with be printed to console\n\n")
         log_level_console = logging.INFO #For Advanced Users
+    elif(pw==1):
+        print("Welcome User - Important test result messages with be printed to console\n\n")
+        log_level_console = logging.IMPORTANT #For Tester Use
     else:
+        print("An invalid selection was made. Default User level was used.")
         print("Welcome User - Important test result messages with be printed to console\n\n")
         log_level_console = logging.IMPORTANT #For Tester Use
 
