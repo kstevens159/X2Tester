@@ -40,6 +40,7 @@ import struct
 import shutil
 import logging
 import logging.handlers
+import sys
 
 
 def main():
@@ -2084,24 +2085,42 @@ if __name__ == "__main__":
     logging.important = lambda msg, *args, **kwargs: logging.log(logging.IMPORTANT, msg, *args, **kwargs)
 
     #Determine Console logging settings
-    pw = eval(input("Please select the level of output for this program run.\n"
-                    "1=User - Only pass/fail test result information is displayed.\n"
-                    "2=Advanced - Pass/fail and recorded value test result information is displayed.\n"
-                    "3=Admin - All process and test result infomration is displayed.\n"
-                    "Selection: "))
-    if(pw==3):
-        print("Welcome Admin User - All messages with be printed to console\n\n")
-        log_level_console = logging.DEBUG #For NexSens Use
-    elif(pw==2):
-        print("Welcome Advanced User - All test result messages with be printed to console\n\n")
-        log_level_console = logging.INFO #For Advanced Users
-    elif(pw==1):
-        print("Welcome User - Important test result messages with be printed to console\n\n")
-        log_level_console = logging.IMPORTANT #For Tester Use
+    #If the program wasn't started with a user argument, prompt for run type
+    if(len(sys.argv)==1):
+        pw = eval(input("Please select the level of output for this program run.\n"
+                        "1=User - Only pass/fail test result information is displayed.\n"
+                        "2=Advanced - Pass/fail and recorded value test result information is displayed.\n"
+                        "3=Admin - All process and test result infomration is displayed.\n"
+                        "Selection: "))
+        if(pw==3):
+            print("Welcome Admin User - All messages with be printed to console\n\n")
+            log_level_console = logging.DEBUG #For NexSens Use
+        elif(pw==2):
+            print("Welcome Advanced User - All test result messages with be printed to console\n\n")
+            log_level_console = logging.INFO #For Advanced Users
+        elif(pw==1):
+            print("Welcome User - Important test result messages with be printed to console\n\n")
+            log_level_console = logging.IMPORTANT #For Tester Use
+        else:
+            print("An invalid selection was made. Default User level was used.")
+            print("Welcome User - Important test result messages with be printed to console\n\n")
+            log_level_console = logging.IMPORTANT #For Tester Use
     else:
-        print("An invalid selection was made. Default User level was used.")
-        print("Welcome User - Important test result messages with be printed to console\n\n")
-        log_level_console = logging.IMPORTANT #For Tester Use
+        #Determine Console logging settings
+        runType = str(sys.argv[1])
+        if(runType=="-admin"):
+            print("Use Type: Admin User - All messages with be printed to console\n\n")
+            log_level_console = logging.DEBUG #For NexSens Use
+        elif(runType=="-advanced"):
+            print("Use Type: Advanced User - All test result messages with be printed to console\n\n")
+            log_level_console = logging.INFO #For Advanced Users
+        elif(runType=="-user"):
+            print("Use Type: User - Important test result messages with be printed to console\n\n")
+            log_level_console = logging.IMPORTANT #For Tester Use
+        else:
+            print("An invalid selection was made. Default User level was used.")
+            print("Use Type: Admin User - All messages with be printed to console\n\n")
+            log_level_console = logging.DEBUG #For NexSens Use        
 
     #Set file logging settings
     log_level_file = logging.DEBUG #Always capture all to the log

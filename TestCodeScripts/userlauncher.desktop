@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=X2 Main PCB Test Program
+Name=User X2 Main PCB Test Program
 Version=1.0
 Comment=Launches X2 Tester Application
-Exec=/home/pi/Documents/GitHub/X2Tester/X2_Main_PCB_Test.sh
+Exec=/home/pi/Documents/GitHub/X2Tester/X2_Main_PCB_Test_User.sh
 Terminal=true
 Type=Application
 Category=Test
