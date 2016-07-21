@@ -821,15 +821,15 @@ def main():
             
             #If there were failures tell user and see if they want to rety those sections
             if(leftToTest>0):
-                logging.important("The curent board has finished testing all sections.\n"
-                      "There was/were %d failure(s).\n"
-                      "The failed section(s) is/are:",leftToTest)
+                logging.important("The curent itteration has finished testing all sections.\n\n"
+                      "Failures: %d\n"
+                      "Failed Sections:",leftToTest)
                 for i in range(0,len(moduleToTest)): #Loop through and print out the sections that failed
                     if(moduleToTest[i]):
                         logging.important(moduleName[i])
                 done=False
                 while not (done):
-                    retrySections = input("Would you like to retry the failed sections? (y/n): ")
+                    retrySections = input("\nWould you like to retry the failed sections? (y/n): ")
                     if(retrySections == "y" or retrySections == "Y"):
                         retryTest=True
                         done=True
@@ -840,7 +840,8 @@ def main():
                         logging.important("\nYou must enter y or n. Try again.\n")
             else:
                 retryTest=False
-                logging.important("The board completed testing with no failures")
+                logging.important("The curent itteration has finished testing all sections.\n\n"
+                      "Failures: %d\n",leftToTest)
 
             #Decide whether to end itteration or re-loop
             if(retryTest):
@@ -860,8 +861,9 @@ def main():
                 retryAttempts=0
                     
                 #End current board itteration
-                input("\nThe current board has finished testing and is safe to remove.\n"
-                      "Please remember to remove the SD Card\n\n"
+                input("\nThe current board has finished testing.\n"
+                      "Please disconnect the PCB now.\n"
+                      "(Remove the SD Card)\n\n"
                       "Press Enter to continue\n")
 
                 #Prepare for next board
@@ -876,18 +878,18 @@ def main():
         logging.error("The program was cancelled by a keyboard interrupt!\n")
         print("==============================\n")
         input("Press Enter to exit\n")
-##    except Exception as error:
-##        out_records.write(",PROGRAM ERROR,")
-##        out_records.write(str(error))
-##        out_records.write("\n")#Line return to go to next record
-##        out_records.flush()
-##        print("\n==============================\n")
-##        logging.error("The program encountered the following error!\n")
-##        logging.error("Error Type: %s", type(error))
-##        logging.error(error.args)
-##        logging.error(error)
-##        print("==============================\n")
-##        input("Press Enter to exit\n")
+    except Exception as error:
+        out_records.write(",PROGRAM ERROR,")
+        out_records.write(str(error))
+        out_records.write("\n")#Line return to go to next record
+        out_records.flush()
+        print("\n==============================\n")
+        logging.error("The program encountered the following error!\n")
+        logging.error("Error Type: %s", type(error))
+        logging.error(error.args)
+        logging.error(error)
+        print("==============================\n")
+        input("Press Enter to exit\n")
     finally:
         logging.important("Cleaning up and exiting...")
         out_records.close #Close the file
@@ -2110,7 +2112,7 @@ if __name__ == "__main__":
             print("Welcome User - Important test result messages with be printed to console\n\n")
             log_level_console = logging.IMPORTANT #For Tester Use
     else:
-        #Determine Console logging settings
+        #Determine Console logging settings based on argument
         runType = str(sys.argv[1])
         if(runType=="-admin"):
             print("Use Type: Admin User - All messages with be printed to console\n\n")
@@ -2142,7 +2144,9 @@ if __name__ == "__main__":
     formatter_console=logging.Formatter('%(message)s')
 
     #Create the handler for the file output
-    logger_file=logging.handlers.TimedRotatingFileHandler(log_file_name,when='D', interval = 1, backupCount=0) #Creates a new log file each day
+##    logger_file=logging.handlers.TimedRotatingFileHandler(log_file_name,when='D', interval = 1, backupCount=100) #Creates a new log file each day
+    logger_file=logging.handlers.TimedRotatingFileHandler(log_file_name,when="midnight", backupCount=100) #Creates a new file at midnight each day
+##    logger_file=logging.handlers.RotatingFileHandler(log_file_name,mode='a',maxBytes=2e6,backupCount=100) #Creates a new file once it gets to 2MB
     logger_file.setLevel(log_level_file)
     logger_file.setFormatter(formatter_file)
     logger.addHandler(logger_file)
