@@ -120,7 +120,7 @@ def main():
         #Check if folder is there and if not make
         os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
         #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
-        name = "PCBTestResults.csv"
+        name = "Main_PCBTestResults.csv"
         date = datetime.datetime.now().strftime("%Y.%m.%d")
         filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
 
@@ -899,6 +899,275 @@ def main():
         GPIO.output(pinDict["IO4"],GPIO.LOW) #Turn power off to T-Node
         GPIO.cleanup() #Clean up GPIOs
         logging.shutdown() #Stops the logging process
+
+
+def mainRTU():
+    try: #Put everything in a try statement to allow the capturing and handling of errors
+        
+        ##############################
+        ## Define program variables ##
+        ##############################
+        
+        #Device Parameters
+        snlen = 4 #length of the serial number
+        mbRetries = 3 #Number of retries on modbus commands
+
+        #USB RS-485 Parameters
+        x2RTUmbAddress = 253 #X2 RTU universal address
+        tnodembAddress = 1
+        baud = 19200
+        parity = 'N'
+        bytesize=8
+        stopbits=1
+        modbusTimeout=0.5
+        comPort = '/dev/ttyUSB0'
+
+        ################################
+        ## Setup Devices & Interfaces ##
+        ################################
+        
+        #Open SPI bus for use by the ADC chip
+        spi = spidev.SpiDev()
+        spi.open(0,1) #SPI port 0, CS 1
+
+        #Setup the modbus instance of the X2 RTU
+        rtu = minimalmodbus.Instrument(comPort, x2RTUmbAddress)#Define the minimalmodbus instance
+        rtu.serial.baudrate = baud
+        rtu.serial.parity = parity
+        rtu.serial.bytesize = bytesize
+        rtu.serial.stopbits = stopbits
+        rtu.serial.timeout = modbusTimeout
+        minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
+##        rtu.debug=True
+
+        #Setup the modbus instance of the Passthrough T-Node
+        tnode = minimalmodbus.Instrument(comPort, tnodembAddress)#Define the minimalmodbus instance
+        tnode.serial.baudrate = baud
+        tnode.serial.parity = parity
+        tnode.serial.bytesize = bytesize
+        tnode.serial.stopbits = stopbits
+        tnode.serial.timeout = modbusTimeout
+##        tnode.debug=True
+
+        ##Define GPIO Interface
+        GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
+        GPIO.setwarnings(False) #supresses the error if pins are already setup
+        #Define the pin numbers in a dictionary to allow easy reference
+        pinDict = {"IO1"        :   29,
+                   "TNODE1"     :   31,
+                   "TNODE2"     :   33,
+                   "TRIGGER1"   :   36,
+                   "SWDi"       :   38,
+                   "SWDo"       :   40
+                  }
+        #Set the GPIO directions
+        GPIO.setup(pinDict["IO1"], GPIO.OUT)
+        GPIO.setup(pinDict["TNODE1"], GPIO.OUT)
+        GPIO.setup(pinDict["TNODE2"], GPIO.OUT)
+        GPIO.setup(pinDict["TRIGGER1"], GPIO.OUT)
+        GPIO.setup(pinDict["SWDi"], GPIO.OUT)
+        GPIO.setup(pinDict["SWDo"], GPIO.IN)
+
+        
+        #########################
+        ## Create Results File ##
+        #########################
+
+        #Check if folder is there and if not make
+        os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
+        #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
+        name = "RTU_PCBTestResults.csv"
+        date = datetime.datetime.now().strftime("%Y.%m.%d")
+        filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
+
+        #Open the file
+        if(os.path.isfile(filename)):   #If the file exists append it
+            out_records=open(filename, 'a')
+        else:                           #If the file doesn't exist create it and add section headers
+            out_records=open(filename, 'w')
+            out_records.write("Serial Number,"
+                              "3V LDO Status,"
+                                    
+                              "Itteration Time,"
+                              "\n")
+
+        
+        ######################
+        ## Setup Module Def ##
+        ######################
+            
+        #Determine which modules to test for this program run
+        moduleToTest = getModulesToTest() #Call the function to get module list
+        masterModuleToTest = list(moduleToTest) #Master list to revert to for each board
+        moduleName = ["Mod1  - 3V LDO",
+                      "Mod2  - RS-485 driver, EE, and processor",
+
+                      "Mod19 - Magnetic Switch",
+                      "Mod20 - K64 LEDs"]
+        moduleNumber=0 #Counter for which module is active
+
+        ###################
+        ## RTU Test Loop ##
+        ###################
+
+        sn = getSN(snlen) #Get the initial devices serial number
+        retryAttempts=0 #Counter used when a PCB is re-tested after an failure occurs
+        
+        ##Continually loop through the test process to allow the user to test a batch of PCBs
+        while (sn != "-1"): #Loop through all PCBs to be tested
+            startTime=time.time()#Timestamp beginning time
+            logging.debug("\n\n\n"
+                          "------------- ITTERATION START FOR SN: %s -------------",sn)
+            logging.debug("------------- %s -------------\n\n\n",time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(time.time())))
+
+            out_records.write("%s" % sn) #Write serial number to file
+
+##            #Test the 3V LDO
+##            if(moduleToTest[moduleNumber]):
+##                print("\n------------------------------")
+##                logging.important("Module 1 - Testing the 3V LDO...")
+##                result1=test3VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 3V LDO test module
+##                print ("=====================")
+##                logging.important("Test results:\n"
+##                             "3V LDO Status: %s\n"
+##                             ,result1[0])
+##                logging.info("Advanced test results:\n"
+##                             "3V LDO Voltage: %.3f"
+##                             ,result1[1])
+##                out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
+##                print("------------------------------\n")
+##                #Clear flag if test passed
+##                if(result1[0]=="Pass"):
+##                    moduleToTest[moduleNumber]=0
+##            else:
+##                print("\n------------------------------")
+##                logging.important("Module 1 - 3V LDO Testing Skipped...")
+##                out_records.write(",skipped,skipped") #Write the result to the file
+##                print("------------------------------\n")
+##            moduleNumber += 1 #Increment the active module count
+##
+##            
+##
+##            #Test K64 LEDs
+##            if(moduleToTest[moduleNumber]):
+##                print("\n------------------------------")
+##                logging.important("Module 20 - Testing the K64 LEDs...")
+##                result20=testK64LEDs(GPIO,pinDict,x2,mbRetries) #Call the K64 LEDs test module
+##                print("=====================")
+##                logging.important("Test result:\n"
+##                             "K64 LEDs Status: %s"
+##                             ,result20[0])
+##                out_records.write(",%s" % (result20[0])) #Write the result to the file
+##                print("------------------------------\n")
+##                #Clear flag if test passed
+##                if(result20[0]=="Pass"):
+##                    moduleToTest[moduleNumber]=0
+##            else:
+##                print("\n------------------------------")
+##                logging.important("Module 20 - K64 LED Testing Skipped...")
+##                out_records.write(",skipped") #Write the result to the file
+##                print("------------------------------\n")
+##            moduleNumber += 1 #Increment the active module count
+
+
+            #Mark end of board itteration
+            endTime=time.time()#Timestamp ending time
+            itterationTime=round(endTime-startTime,1)
+            out_records.write(",%s" % (itterationTime))
+            out_records.write("\n")#Line return to go to next record
+
+            #Reset the module increment counter
+            moduleNumber=0
+
+            print("----------------------------------------------")
+            logging.important("Board SN: %s has completed its itteration",sn)
+            logging.important("The test took a total of %.3f seconds",itterationTime)
+            print("----------------------------------------------\n\n")
+            
+
+            #Check for failed modules and allow retry
+            leftToTest=sum(moduleToTest) #sum the number of modules left to test. These were changed to 0 above if the module passed.
+            
+            #If there were failures tell user and see if they want to rety those sections
+            if(leftToTest>0):
+                logging.important("The curent itteration has finished testing all sections.\n\n"
+                      "Failures: %d\n"
+                      "Failed Sections:",leftToTest)
+                for i in range(0,len(moduleToTest)): #Loop through and print out the sections that failed
+                    if(moduleToTest[i]):
+                        logging.important(moduleName[i])
+                done=False
+                while not (done):
+                    retrySections = input("\nWould you like to retry the failed sections? (y/n): ")
+                    if(retrySections == "y" or retrySections == "Y"):
+                        retryTest=True
+                        done=True
+                    elif(retrySections == "n" or retrySections == "N"):
+                        retryTest=False
+                        done=True
+                    else:
+                        logging.important("\nYou must enter y or n. Try again.\n")
+            else:
+                retryTest=False
+                logging.important("The curent itteration has finished testing all sections.\n\n"
+                      "Failures: %d\n",leftToTest)
+
+            #Decide whether to end itteration or re-loop
+            if(retryTest):
+                retryAttempts = retryAttempts+1
+                sn = sn[0:snlen]+" --RETRY-- "+str(retryAttempts) #Set the serial number to "xxxx --Retry-- y"
+            else:
+                #Reset the modules for the next boards itteration to the original selection for this program run
+                moduleToTest = list(masterModuleToTest)
+
+                #Turn off the power
+                GPIO.output(pinDict["IO1"],GPIO.LOW)
+                GPIO.output(pinDict["TNODE1"],GPIO.LOW)
+                GPIO.output(pinDict["TNODE2"],GPIO.LOW)
+
+                #Set retry attempts back to 0 for next board
+                retryAttempts=0
+                    
+                #End current board itteration
+                input("\nThe current board has finished testing.\n"
+                      "Please disconnect the PCB now.\n"
+                      "(Remove the SD Card)\n\n"
+                      "Press Enter to continue\n")
+
+                #Prepare for next board
+                out_records.flush()
+                sn = getSN(snlen) #Get new board SN
+
+    #Define operation when an exception occurs
+    except KeyboardInterrupt:
+        out_records.write(",KEYBOARD INTERRUPT ERROR\n")#Line return to go to next record
+        out_records.flush()        
+        print("\n==============================\n")
+        logging.error("The program was cancelled by a keyboard interrupt!\n")
+        print("==============================\n")
+        input("Press Enter to exit\n")
+    except Exception as error:
+        out_records.write(",PROGRAM ERROR,")
+        out_records.write(str(error))
+        out_records.write("\n")#Line return to go to next record
+        out_records.flush()
+        print("\n==============================\n")
+        logging.error("The program encountered the following error!\n")
+        logging.error("Error Type: %s", type(error))
+        logging.error(error.args)
+        logging.error(error)
+        print("==============================\n")
+        input("Press Enter to exit\n")
+    finally:
+        logging.important("Cleaning up and exiting...")
+        out_records.close #Close the file
+        GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
+        GPIO.output(pinDict["TNODE1"],GPIO.LOW) #Turn power off to T-Node 1
+        GPIO.output(pinDict["TNODE2"],GPIO.LOW) #Turn power off to T-Node 2
+        GPIO.cleanup() #Clean up GPIOs
+        logging.shutdown() #Stops the logging process
+
+
 
 
 
@@ -2073,7 +2342,7 @@ if __name__ == "__main__":
     ## Welcome User ##
     ##################
 
-    print("Welcome to the X2 Main PCB Test Program.\n"
+    print("Welcome to the X2 PCB Test Program.\n"
          "To end the program at any point please enter CTRL-C.\n\n"
          "Please follow along with the prompts to complete testing.\n"
          "All results are automatically stored on this device and can be\n"
@@ -2091,8 +2360,9 @@ if __name__ == "__main__":
     logging.important = lambda msg, *args, **kwargs: logging.log(logging.IMPORTANT, msg, *args, **kwargs)
 
     #Determine Console logging settings
-    #If the program wasn't started with a user argument, prompt for run type
+    #If the program wasn't started with user arguments, prompt for run type 
     if(len(sys.argv)==1):
+        #Determine console output mode
         pw = eval(input("Please select the level of output for this program run.\n"
                         "1=User - Only pass/fail test result information is displayed.\n"
                         "2=Advanced - Pass/fail and recorded value test result information is displayed.\n"
@@ -2111,6 +2381,27 @@ if __name__ == "__main__":
             print("An invalid selection was made. Default User level was used.")
             print("Welcome User - Important test result messages with be printed to console\n\n")
             log_level_console = logging.IMPORTANT #For Tester Use
+
+
+        #Determine RTU or Main PCB test
+        done=False
+        while not(done):
+            pcb = eval(input("Please select which PCB to test.\n"
+                            "1=Main Board PCB\n"
+                            "2=RTU Board PCB\n"
+                            "Selection: "))
+            if(pcb==1):
+                print("PCB to Test: Main\n\n")
+                testPCB="-main"
+                done=True
+            elif(pcb==2):
+                print("PCB to Test: RTU\n\n")
+                testPCB="-rtu"
+                done=True
+            else:
+                print("\nYou must enter 1 or 2. Please try again.\n")
+                done=False
+
     else:
         #Determine Console logging settings based on argument
         runType = str(sys.argv[1])
@@ -2126,7 +2417,17 @@ if __name__ == "__main__":
         else:
             print("An invalid selection was made. Default User level was used.")
             print("Use Type: Admin User - All messages with be printed to console\n\n")
-            log_level_console = logging.DEBUG #For NexSens Use        
+            log_level_console = logging.DEBUG #For NexSens Use
+
+        #Set the PCB to use
+        testPCB = str(sys.argv[2])
+        if(testPCB=="-main"):
+            print("PCB to Test: Main\n\n")
+        elif(testPCB=="-rtu"):
+            print("PCB to Test: RTU\n\n")
+        else:
+            print("An unknown command argument was used\n"
+                  "Running main PCB\n\n")
 
     #Set file logging settings
     log_level_file = logging.DEBUG #Always capture all to the log
@@ -2160,5 +2461,8 @@ if __name__ == "__main__":
     ###############
     ## Call Main ##
     ###############
-    main()
+    if(testPCB=="-main"):
+        main()
+    else:
+        mainRTU()
         
