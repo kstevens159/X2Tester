@@ -1,0 +1,23 @@
+1 : Mod1  - 5V SEPIC
+1 : Mod2  - 3.3V LDO
+1 : Mod3  - RS-485 driver, EE, and processor
+1 : Mod4  - 5V System Current
+1 : Mod5  - 3.3V System Current
+1 : Mod6  - Ethernet
+1 : Mod7  - SD Card
+1 : Mod8  - 12V Switch D
+1 : Mod9  - Switch Priority Power Line
+1 : Mod10 - RS-485 Passthrough
+1 : Mod11 - LEDs
+1 : Mod12 - Triggers
+
+
+
+Change only the number before the :
+The program only reads the first character on each line.
+Ensure that this is either 0 or 1
+
+To run a module use a 1
+To not run a module use a 0
+
+Save the file then close

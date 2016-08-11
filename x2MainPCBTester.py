@@ -24,6 +24,7 @@
 # MM/DD/YY hh:mm Who	Description
 # --------------------------------------------------------------------------
 # 06/28/16 09:00 KCS	Created
+# 08/10/16 06:00 KCS    Added RTU code
 # --------------------------------------------------------------------------
 #
 
@@ -42,6 +43,9 @@ import logging
 import logging.handlers
 import sys
 
+##############################
+## Program Run For Main PCB ##
+##############################
 
 def main():
     try: #Put everything in a try statement to allow the capturing and handling of errors
@@ -58,7 +62,7 @@ def main():
 
         #USB RS-485 Parameters
         x2mbAddress = 252 #X2 Main universal address
-        tnodembAddress = 20
+        tnode20mbAddress = 20
         baud = 19200
         parity = 'N'
         bytesize=8
@@ -85,13 +89,13 @@ def main():
 ##        x2.debug=True
 
         #Setup the modbus instance of the Passthrough T-Node
-        tnode = minimalmodbus.Instrument(comPort, tnodembAddress)#Define the minimalmodbus instance
-        tnode.serial.baudrate = baud
-        tnode.serial.parity = parity
-        tnode.serial.bytesize = bytesize
-        tnode.serial.stopbits = stopbits
-        tnode.serial.timeout = modbusTimeout
-##        tnode.debug=True
+        tnode20 = minimalmodbus.Instrument(comPort, tnode20mbAddress)#Define the minimalmodbus instance
+        tnode20.serial.baudrate = baud
+        tnode20.serial.parity = parity
+        tnode20.serial.bytesize = bytesize
+        tnode20.serial.stopbits = stopbits
+        tnode20.serial.timeout = modbusTimeout
+##        tnode20.debug=True
 
         ##Define GPIO Interface
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
@@ -119,7 +123,7 @@ def main():
 
         #Check if folder is there and if not make
         os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
-        #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
+        #Define the file name to be <CURRENT_DATE>_Main_PCBTestResults.csv
         name = "Main_PCBTestResults.csv"
         date = datetime.datetime.now().strftime("%Y.%m.%d")
         filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
@@ -210,7 +214,7 @@ def main():
         ######################
             
         #Determine which modules to test for this program run
-        moduleToTest = getModulesToTest() #Call the function to get module list
+        moduleToTest = getModulesToTest("ModuleToTest.txt",20) #Call the function to get module list
         masterModuleToTest = list(moduleToTest) #Master list to revert to for each board
         moduleName = ["Mod1  - 3V LDO",
                       "Mod2  - RS-485 driver, EE, and processor",
@@ -708,7 +712,7 @@ def main():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 17 - Testing the RS-485 Passthrough...")
-                result17=testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode) #Call the RS-485 Passthrough test module
+                result17=testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode20) #Call the RS-485 Passthrough test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "RTU RS-485 Passthrough Status: %s"
@@ -901,6 +905,10 @@ def main():
         logging.shutdown() #Stops the logging process
 
 
+#############################
+## Program Run For RTU PCB ##
+#############################
+        
 def mainRTU():
     try: #Put everything in a try statement to allow the capturing and handling of errors
         
@@ -914,7 +922,8 @@ def mainRTU():
 
         #USB RS-485 Parameters
         x2RTUmbAddress = 253 #X2 RTU universal address
-        tnodembAddress = 1
+        tnode20mbAddress = 20
+        tnode30mbAddress = 30
         baud = 19200
         parity = 'N'
         bytesize=8
@@ -940,14 +949,23 @@ def mainRTU():
         minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
 ##        rtu.debug=True
 
-        #Setup the modbus instance of the Passthrough T-Node
-        tnode = minimalmodbus.Instrument(comPort, tnodembAddress)#Define the minimalmodbus instance
-        tnode.serial.baudrate = baud
-        tnode.serial.parity = parity
-        tnode.serial.bytesize = bytesize
-        tnode.serial.stopbits = stopbits
-        tnode.serial.timeout = modbusTimeout
-##        tnode.debug=True
+        #Setup the modbus instance of the Passthrough T-Node 1 (Address 20)
+        tnode20 = minimalmodbus.Instrument(comPort, tnode20mbAddress)#Define the minimalmodbus instance
+        tnode20.serial.baudrate = baud
+        tnode20.serial.parity = parity
+        tnode20.serial.bytesize = bytesize
+        tnode20.serial.stopbits = stopbits
+        tnode20.serial.timeout = modbusTimeout
+##        tnode20.debug=True
+
+        #Setup the modbus instance of the Passthrough T-Node 2 (Address 30)
+        tnode30 = minimalmodbus.Instrument(comPort, tnode30mbAddress)#Define the minimalmodbus instance
+        tnode30.serial.baudrate = baud
+        tnode30.serial.parity = parity
+        tnode30.serial.bytesize = bytesize
+        tnode30.serial.stopbits = stopbits
+        tnode30.serial.timeout = modbusTimeout
+##        tnode30.debug=True
 
         ##Define GPIO Interface
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
@@ -975,7 +993,7 @@ def mainRTU():
 
         #Check if folder is there and if not make
         os.makedirs("/home/pi/Documents/X2_PCB_Test_Results",exist_ok=True)
-        #Define the file name to be <CURRENT_DATE>_PCBTestResults.csv
+        #Define the file name to be <CURRENT_DATE>_RTU_PCBTestResults.csv
         name = "RTU_PCBTestResults.csv"
         date = datetime.datetime.now().strftime("%Y.%m.%d")
         filename="/home/pi/Documents/X2_PCB_Test_Results/"+date+"_"+name
@@ -986,8 +1004,27 @@ def mainRTU():
         else:                           #If the file doesn't exist create it and add section headers
             out_records=open(filename, 'w')
             out_records.write("Serial Number,"
-                              "3V LDO Status,"
-                                    
+                              "5V SEPIC Status,"
+                              "5V SEPIC Voltage,"
+                              "3.3V LDO Status,"
+                              "3.3V LDO Voltage,"
+                              "Processor & Host RS-485 Status,"
+                              "EE Chip Status,"
+                              "5V System Current Status,"
+                              "5V System Current Value,"
+                              "3.3V System Current Status,"
+                              "3.3V System Current Value,"
+                              "Ethernet Status,"
+                              "Ethernet Voltage,"
+                              "SD Card Status,"
+                              "12V SW.D Status,"
+                              "Switch Priority Power Status,"
+                              "Switch Priority Power J3 Voltage,"
+                              "Switch Priority Power J4 Voltage,"
+                              "RS-485 Passthrough J3 Status,"
+                              "RS-485 Passthrough J4 Status,"
+                              "LEDs Status,"
+                              "Trigger 1 Status,"
                               "Itteration Time,"
                               "\n")
 
@@ -997,14 +1034,23 @@ def mainRTU():
         ######################
             
         #Determine which modules to test for this program run
-        moduleToTest = getModulesToTest() #Call the function to get module list
+        moduleToTest = getModulesToTest("ModuleToTestRTU.txt",12) #Call the function to get module list
         masterModuleToTest = list(moduleToTest) #Master list to revert to for each board
-        moduleName = ["Mod1  - 3V LDO",
-                      "Mod2  - RS-485 driver, EE, and processor",
-
-                      "Mod19 - Magnetic Switch",
-                      "Mod20 - K64 LEDs"]
+        moduleName = ["Mod1  - 5V SEPIC",
+                      "Mod2  - 3.3V LDO",
+                      "Mod3  - RS-485 driver, EE, and processor",
+                      "Mod4  - 5V System Current",
+                      "Mod5  - 3.3V System Current",
+                      "Mod6  - Ethernet",
+                      "Mod7  - SD Card",
+                      "Mod8  - 12V Switch D",
+                      "Mod9  - Switch Priority Power Line",
+                      "Mod10 - RS-485 Passthrough",
+                      "Mod11 - LEDs",
+                      "Mod12 - Triggers"]
         moduleNumber=0 #Counter for which module is active
+
+       
 
         ###################
         ## RTU Test Loop ##
@@ -1022,52 +1068,291 @@ def mainRTU():
 
             out_records.write("%s" % sn) #Write serial number to file
 
-##            #Test the 3V LDO
-##            if(moduleToTest[moduleNumber]):
-##                print("\n------------------------------")
-##                logging.important("Module 1 - Testing the 3V LDO...")
-##                result1=test3VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 3V LDO test module
-##                print ("=====================")
-##                logging.important("Test results:\n"
-##                             "3V LDO Status: %s\n"
-##                             ,result1[0])
-##                logging.info("Advanced test results:\n"
-##                             "3V LDO Voltage: %.3f"
-##                             ,result1[1])
-##                out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
-##                print("------------------------------\n")
-##                #Clear flag if test passed
-##                if(result1[0]=="Pass"):
-##                    moduleToTest[moduleNumber]=0
-##            else:
-##                print("\n------------------------------")
-##                logging.important("Module 1 - 3V LDO Testing Skipped...")
-##                out_records.write(",skipped,skipped") #Write the result to the file
-##                print("------------------------------\n")
-##            moduleNumber += 1 #Increment the active module count
-##
-##            
-##
-##            #Test K64 LEDs
-##            if(moduleToTest[moduleNumber]):
-##                print("\n------------------------------")
-##                logging.important("Module 20 - Testing the K64 LEDs...")
-##                result20=testK64LEDs(GPIO,pinDict,x2,mbRetries) #Call the K64 LEDs test module
-##                print("=====================")
-##                logging.important("Test result:\n"
-##                             "K64 LEDs Status: %s"
-##                             ,result20[0])
-##                out_records.write(",%s" % (result20[0])) #Write the result to the file
-##                print("------------------------------\n")
-##                #Clear flag if test passed
-##                if(result20[0]=="Pass"):
-##                    moduleToTest[moduleNumber]=0
-##            else:
-##                print("\n------------------------------")
-##                logging.important("Module 20 - K64 LED Testing Skipped...")
-##                out_records.write(",skipped") #Write the result to the file
-##                print("------------------------------\n")
-##            moduleNumber += 1 #Increment the active module count
+            
+
+            #Test the 5V SEPIC
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 1 - Testing the 5V SEPIC...")
+                result1=testRTU5VSEPIC(GPIO,pinDict,spi) #Call the 5V SEPIC test module
+                print ("=====================")
+                logging.important("Test results:\n"
+                             "5V SEPIC Status: %s\n"
+                             ,result1[0])
+                logging.info("Advanced test results:\n"
+                             "5V SEPIC Voltage: %.3f"
+                             ,result1[1])
+                out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result1[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 1 - 5V SEPIC Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test the 3.3V LDO
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 2 - Testing the 3.3V LDO...")
+                result2=testRTU33VLDO(GPIO,pinDict,spi) #Call the 3.3V LDO test module
+                print ("=====================")
+                logging.important("Test results:\n"
+                             "3.3V LDO Status: %s\n"
+                             ,result2[0])
+                logging.info("Advanced test results:\n"
+                             "3.3V LDO Voltage: %.3f"
+                             ,result2[1])
+                out_records.write(",%s,%s" % (result2[0],result2[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result2[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 2 - 3.3V LDO Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test the RS-485 driver, EE and processor
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 3 - Testing the Processor, EE, & RS-485 Modbus Communication...")
+                result3=testProcEEAndRS485(GPIO,pinDict,rtu,mbRetries) #Call the Processor and RS-485 test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "Processor & Host RS-485 Status: %s\n"
+                             "EE Chip Status: %s"
+                             ,result3[0],result3[1])
+                out_records.write(",%s,%s" % (result3[0],result3[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result3[0]=="Pass" and result3[1]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 3 - Processor, EE, & RS-485 Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test 5V System Current
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 4 - Testing the 5V System Current...")
+                result4=testRTU5VSysCur(GPIO,pinDict,rtu,mbRetries) #Call the 5V system current test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "5V System Current Status: %s\n"
+                             ,result4[0])
+                logging.info("Advanced test results:\n"
+                             "5V System Current Value: %.3f"
+                             ,result4[1])
+                out_records.write(",%s,%s" % (result4[0],result4[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result4[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 4 - 5V System Current Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test 3.3V System Current
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 5 - Testing the 3.3V System Current...")
+                result5=testRTU33SysCur(GPIO,pinDict,rtu,mbRetries) #Call the 3.3V system current test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "3.3V System Current Status: %s\n"
+                             ,result5[0])
+                logging.info("Advanced test results:\n"
+                             "3.3V System Current Value: %.3f"
+                             ,result5[1])
+                out_records.write(",%s,%s" % (result5[0],result5[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result5[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 5 - 3.3V System Current Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test Ethernet
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 6 - Testing the Ethernet...")
+                result6=testRTUEthernet(GPIO,pinDict,rtu,mbRetries,spi) #Call the Ethernet test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "Ethernet Status: %s\n"
+                             ,result6[0])
+                logging.info("Advanced test results:\n"
+                             "Ethernet Voltage: %.3f"
+                             ,result6[1])
+                out_records.write(",%s,%s" % (result6[0],result6[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result6[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 6 - Ethernet Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test SD Card
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 7 - Testing the SD Card...")
+                result7=testSDCard(GPIO,pinDict,rtu,mbRetries) #Call the SD Card test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "SD Card Status: %s"
+                             ,result7[0])
+                out_records.write(",%s" % (result7[0])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result7[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 7 - SD Card Testing Skipped...")
+                out_records.write(",skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test SW.D Line
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 8 - Testing the SW.D Line...")
+                result8=testRTUSWD(GPIO,pinDict) #Call the SW.D Line test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "SW.D Line Status: %s"
+                             ,result8[0])
+                out_records.write(",%s" % (result8[0])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result8[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 8 - SW.D Line Testing Skipped...")
+                out_records.write(",skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test SW. Priority Power
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 9 - Testing the SW. Priority Power Line...")
+                result9=testRTUSWPrioPwr(GPIO,pinDict,spi) #Call the SW. Prio. Pwr. test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "SW. Priority Power Line Status: %s"
+                             ,result9[0])
+                logging.info("Advanced test results:\n"
+                             "SW. Priority Power Line J3 Voltage: %.3f\n"
+                             "SW. Priority Power Line J4 Voltage: %.3f"
+                             ,result9[1],result9[2])
+                out_records.write(",%s,%s,%s" % (result9[0],result9[1],result9[2])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result9[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 9 - SW. Prio. Pwr. Testing Skipped...")
+                out_records.write(",skipped,skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test the RS-485 passthrough
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 10 - Testing the RS-485 Passthrough...")
+                result10=testRTUPassthrough(GPIO,pinDict,rtu,mbRetries,tnode20,tnode30) #Call the RS-485 passthrough test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "Passthrough 1 Status: %s\n"
+                             "Passthrough 2 Status: %s"
+                             ,result10[0],result10[1])
+                out_records.write(",%s,%s" % (result10[0],result10[1])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result10[0]=="Pass" and result10[1]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 10 - RS-485 Passthrough Testing Skipped...")
+                out_records.write(",skipped,skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test LEDs
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 11 - Testing the LEDs...")
+                result11=testRTULEDs(GPIO,pinDict,rtu,mbRetries) #Call the RTU LEDs test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "LEDs Status: %s"
+                             ,result11[0])
+                out_records.write(",%s" % (result11[0])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result11[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 11 - LED Testing Skipped...")
+                out_records.write(",skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
+
+
+            #Test Trigger
+            if(moduleToTest[moduleNumber]):
+                print("\n------------------------------")
+                logging.important("Module 12 - Testing the Trigger Line...")
+                result12=testRTUTriggers(GPIO,pinDict,rtu,mbRetries) #Call the trigger line test module
+                print("=====================")
+                logging.important("Test result:\n"
+                             "Trigger Status: %s"
+                             ,result12[0])
+                out_records.write(",%s" % (result12[0])) #Write the result to the file
+                print("------------------------------\n")
+                #Clear flag if test passed
+                if(result12[0]=="Pass"):
+                    moduleToTest[moduleNumber]=0
+            else:
+                print("\n------------------------------")
+                logging.important("Module 12 - Trigger Testing Skipped...")
+                out_records.write(",skipped") #Write the result to the file
+                print("------------------------------\n")
+            moduleNumber += 1 #Increment the active module count
 
 
             #Mark end of board itteration
@@ -1231,32 +1516,32 @@ def enableDisable(x2,mbRetries,mbDictName,clearText,onOff):
             logging.debug("Disabling the %s was not successful", clearText)
             return False
 
-#Determine which modules should be tested
-def getModulesToTest():
+#Determine which modules should be tested for Main PCB
+def getModulesToTest(file,count):
 
     #Copy the master file to the desktop for user manipulation
-    shutil.copy2("/home/pi/Documents/GitHub/X2Tester/ModuleToTest.txt","/home/pi/Desktop/ModuleToTest.txt")
+    shutil.copy2("/home/pi/Documents/GitHub/X2Tester/"+file,"/home/pi/Desktop/"+file)
 
     input("If only certain modules are to be tested for this run, please update the\n"
-          "ModuleToTest.txt file that is currently on the Desktop.\n\n"
+          "text file that is currently on the Desktop.\n\n"
           "After making any modifications, please save the file and hit ENTER.\n"
           "Otherwise just hit ENTER\n\n")               
 
     #Open the file for reading
-    in_moduleToTestFile=open("/home/pi/Desktop/ModuleToTest.txt", 'r')
+    in_moduleToTestFile=open("/home/pi/Desktop/"+file, 'r')
 
     #Read in the file's values
     moduleToTest=[] #start with an empty list
-    for i in range(0,20):
+    for i in range(0,count):
         moduleToTest.append(int(in_moduleToTestFile.readline()[0:1]))#Read in just the first character of each row and add to the list
 
     #close the file
     in_moduleToTestFile.close()
     
     #delete the file from the desktop
-    os.remove("/home/pi/Desktop/ModuleToTest.txt")
+    os.remove("/home/pi/Desktop/"+file)
 
-    return moduleToTest
+    return moduleToTest    
 
 #Used to get the PCB's serial number and ensure it is valid
 def getSN(snlen):
@@ -1948,12 +2233,12 @@ def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
             return ["Fail-Writing address was not successful","Pass"] #Assume EE is OK, since address started as a non default value (1)
 
 #Test RS-485 Passthrough
-def testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode):
+def testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode20):
     logging.debug("Module Start")
     powerOn(x2,mbRetries,GPIO,pinDict,"IO4")
 
     logging.debug("Reading address from the RS-485 passthrough T-Node...")
-    readResult = mbReadRetries(tnode,Reg.mbReg["Add"][0],Reg.mbReg["Add"][1],retries=mbRetries)
+    readResult = mbReadRetries(tnode20,Reg.mbReg["Add"][0],Reg.mbReg["Add"][1],retries=mbRetries)
     if(readResult):
         logging.debug("The RS-485 passthrough T-Node was read successfully")
         return ["Pass"]

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Admin X2 RTU PCB Test Program
+Version=1.0
+Comment=Launches X2 Tester Application
+Exec=/home/pi/Documents/GitHub/X2Tester/X2_RTU_PCB_Test_Admin.sh
+Terminal=true
+Type=Application
+Category=Test
+Icon=/home/pi/Documents/GitHub/X2Tester/x2prod.jpg
+Name[en_GB]=Admin X2 RTU PCB Test Program
