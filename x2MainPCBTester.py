@@ -15,7 +15,7 @@
 #
 # --------------------------------------------------------------------------
 # Description:
-#	Used to test the X2 Main PCB's functionality at the CM. To be run
+#	Used to test the X2 PCB's functionality at the CM. To be run
 #       on a Raspberry Pi 3 with Python 3.
 # 
 #
@@ -74,9 +74,9 @@ def main():
         ## Setup Devices & Interfaces ##
         ################################
         
-        #Open SPI bus for use by the ADC chip
-        spi = spidev.SpiDev()
-        spi.open(0,0)
+        #Open spi0 bus for use by the ADC chip
+        spi0 = spidev.SpiDev()
+        spi0.open(0,0)
 
         #Setup the modbus instance of the X2
         x2 = minimalmodbus.Instrument(comPort, x2mbAddress)#Define the minimalmodbus instance
@@ -101,18 +101,18 @@ def main():
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
         GPIO.setwarnings(False) #supresses the error if pins are already setup
         #Define the pin numbers in a dictionary to allow easy reference
-        pinDict = {"IO1"        :   11,
-                   "IO2"        :   13,
-                   "IO3"        :   15,
-                   "IO4"        :   12,
-                   "TRIGGER1"   :   16,
-                   "TRIGGER2"   :   18
+        pinDict = {"PRIPWR"        :   11,
+                   "SECPWR"        :   13,
+                   "BAKPWR"        :   15,
+                   "TNODEPWR"      :   12,
+                   "TRIGGER1"      :   16,
+                   "TRIGGER2"      :   18
                   }
         #Set the GPIO directions
-        GPIO.setup(pinDict["IO1"], GPIO.OUT)
-        GPIO.setup(pinDict["IO2"], GPIO.OUT)
-        GPIO.setup(pinDict["IO3"], GPIO.OUT)
-        GPIO.setup(pinDict["IO4"], GPIO.OUT)
+        GPIO.setup(pinDict["PRIPWR"], GPIO.OUT)
+        GPIO.setup(pinDict["SECPWR"], GPIO.OUT)
+        GPIO.setup(pinDict["BAKPWR"], GPIO.OUT)
+        GPIO.setup(pinDict["TNODEPWR"], GPIO.OUT)
         GPIO.setup(pinDict["TRIGGER1"], GPIO.IN)
         GPIO.setup(pinDict["TRIGGER2"], GPIO.IN)
 
@@ -258,7 +258,7 @@ def main():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 1 - Testing the 3V LDO...")
-                result1=test3VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 3V LDO test module
+                result1=test3VLDO(GPIO,pinDict,x2,mbRetries,spi0) #Call the 3V LDO test module
                 print ("=====================")
                 logging.important("Test results:\n"
                              "3V LDO Status: %s\n"
@@ -492,7 +492,7 @@ def main():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 10 - Testing the 5V LDO Converter...")
-                result10=test5VLDO(GPIO,pinDict,x2,mbRetries,spi) #Call the 5V LDO test module
+                result10=test5VLDO(GPIO,pinDict,x2,mbRetries,spi0) #Call the 5V LDO test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "5V LDO Status: %s\n"
@@ -516,7 +516,7 @@ def main():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 11 - Testing the 12V Sensor Switch...")
-                result11=test12VSenSW(GPIO,pinDict,x2,mbRetries,spi) #Call the 12V Sensor Switch test module
+                result11=test12VSenSW(GPIO,pinDict,x2,mbRetries,spi0) #Call the 12V Sensor Switch test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "12 Sensor Power Switch A Status: %s\n"
@@ -583,7 +583,7 @@ def main():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 13 - Testing the Priority Power Out Switch...")
-                result13=testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi) #Call the priority power out switch test module
+                result13=testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi0) #Call the priority power out switch test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "Priority Power Output 1 Status: %s\n"
@@ -856,10 +856,10 @@ def main():
                 moduleToTest = list(masterModuleToTest)
 
                 #Turn off the power
-                GPIO.output(pinDict["IO1"],GPIO.LOW)
-                GPIO.output(pinDict["IO2"],GPIO.LOW)
-                GPIO.output(pinDict["IO3"],GPIO.LOW)
-                GPIO.output(pinDict["IO4"],GPIO.LOW)
+                GPIO.output(pinDict["PRIPWR"],GPIO.LOW)
+                GPIO.output(pinDict["SECPWR"],GPIO.LOW)
+                GPIO.output(pinDict["BAKPWR"],GPIO.LOW)
+                GPIO.output(pinDict["TNODEPWR"],GPIO.LOW)
 
                 #Set retry attempts back to 0 for next board
                 retryAttempts=0
@@ -897,10 +897,10 @@ def main():
     finally:
         logging.important("Cleaning up and exiting...")
         out_records.close #Close the file
-        GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
-        GPIO.output(pinDict["IO2"],GPIO.LOW) #Turn power off to Secondary Power
-        GPIO.output(pinDict["IO3"],GPIO.LOW) #Turn power off to Backup Power
-        GPIO.output(pinDict["IO4"],GPIO.LOW) #Turn power off to T-Node
+        GPIO.output(pinDict["PRIPWR"],GPIO.LOW) #Turn power off to Primary Power
+        GPIO.output(pinDict["SECPWR"],GPIO.LOW) #Turn power off to Secondary Power
+        GPIO.output(pinDict["BAKPWR"],GPIO.LOW) #Turn power off to Backup Power
+        GPIO.output(pinDict["TNODEPWR"],GPIO.LOW) #Turn power off to T-Node
         GPIO.cleanup() #Clean up GPIOs
         logging.shutdown() #Stops the logging process
 
@@ -935,9 +935,9 @@ def mainRTU():
         ## Setup Devices & Interfaces ##
         ################################
         
-        #Open SPI bus for use by the ADC chip
-        spi = spidev.SpiDev()
-        spi.open(0,1) #SPI port 0, CS 1
+        #Open spi1 bus for use by the ADC chip
+        spi1 = spidev.SpiDev()
+        spi1.open(0,1) #SPI port 0, CS 1
 
         #Setup the modbus instance of the X2 RTU
         rtu = minimalmodbus.Instrument(comPort, x2RTUmbAddress)#Define the minimalmodbus instance
@@ -971,7 +971,7 @@ def mainRTU():
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
         GPIO.setwarnings(False) #supresses the error if pins are already setup
         #Define the pin numbers in a dictionary to allow easy reference
-        pinDict = {"IO1"        :   29,
+        pinDict = {"RTUPWR"     :   29,
                    "TNODE1"     :   31,
                    "TNODE2"     :   33,
                    "TRIGGER1"   :   36,
@@ -979,7 +979,7 @@ def mainRTU():
                    "SWDo"       :   40
                   }
         #Set the GPIO directions
-        GPIO.setup(pinDict["IO1"], GPIO.OUT)
+        GPIO.setup(pinDict["RTUPWR"], GPIO.OUT)
         GPIO.setup(pinDict["TNODE1"], GPIO.OUT)
         GPIO.setup(pinDict["TNODE2"], GPIO.OUT)
         GPIO.setup(pinDict["TRIGGER1"], GPIO.OUT)
@@ -1074,7 +1074,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 1 - Testing the 5V SEPIC...")
-                result1=testRTU5VSEPIC(GPIO,pinDict,spi) #Call the 5V SEPIC test module
+                result1=testRTU5VSEPIC(GPIO,pinDict,spi1) #Call the 5V SEPIC test module
                 print ("=====================")
                 logging.important("Test results:\n"
                              "5V SEPIC Status: %s\n"
@@ -1099,7 +1099,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 2 - Testing the 3.3V LDO...")
-                result2=testRTU33VLDO(GPIO,pinDict,spi) #Call the 3.3V LDO test module
+                result2=testRTU33VLDO(GPIO,pinDict,spi1) #Call the 3.3V LDO test module
                 print ("=====================")
                 logging.important("Test results:\n"
                              "3.3V LDO Status: %s\n"
@@ -1124,7 +1124,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 3 - Testing the Processor, EE, & RS-485 Modbus Communication...")
-                result3=testProcEEAndRS485(GPIO,pinDict,rtu,mbRetries) #Call the Processor and RS-485 test module
+                result3=testProcEEAndRS485(GPIO,pinDict,rtu,mbRetries,"RTUPWR") #Call the Processor and RS-485 test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "Processor & Host RS-485 Status: %s\n"
@@ -1197,7 +1197,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 6 - Testing the Ethernet...")
-                result6=testRTUEthernet(GPIO,pinDict,rtu,mbRetries,spi) #Call the Ethernet test module
+                result6=testRTUEthernet(GPIO,pinDict,rtu,mbRetries,spi1) #Call the Ethernet test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "Ethernet Status: %s\n"
@@ -1222,7 +1222,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 7 - Testing the SD Card...")
-                result7=testSDCard(GPIO,pinDict,rtu,mbRetries) #Call the SD Card test module
+                result7=testSDCard(GPIO,pinDict,rtu,mbRetries,mainPCB=False) #Call the SD Card test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "SD Card Status: %s"
@@ -1266,7 +1266,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 9 - Testing the SW. Priority Power Line...")
-                result9=testRTUSWPrioPwr(GPIO,pinDict,spi) #Call the SW. Prio. Pwr. test module
+                result9=testRTUSWPrioPwr(GPIO,pinDict,spi1) #Call the SW. Prio. Pwr. test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "SW. Priority Power Line Status: %s"
@@ -1406,7 +1406,7 @@ def mainRTU():
                 moduleToTest = list(masterModuleToTest)
 
                 #Turn off the power
-                GPIO.output(pinDict["IO1"],GPIO.LOW)
+                GPIO.output(pinDict["RTUPWR"],GPIO.LOW)
                 GPIO.output(pinDict["TNODE1"],GPIO.LOW)
                 GPIO.output(pinDict["TNODE2"],GPIO.LOW)
 
@@ -1446,7 +1446,7 @@ def mainRTU():
     finally:
         logging.important("Cleaning up and exiting...")
         out_records.close #Close the file
-        GPIO.output(pinDict["IO1"],GPIO.LOW) #Turn power off to Primary Power
+        GPIO.output(pinDict["RTUPWR"],GPIO.LOW) #Turn power off to Primary Power
         GPIO.output(pinDict["TNODE1"],GPIO.LOW) #Turn power off to T-Node 1
         GPIO.output(pinDict["TNODE2"],GPIO.LOW) #Turn power off to T-Node 2
         GPIO.cleanup() #Clean up GPIOs
@@ -1682,14 +1682,14 @@ def powerOff(GPIO,pinDict,pinValue,delay=5):
 #Used to check the current status of the PCB's power and enable power if it is off
 def powerOn(x2,mbRetries,GPIO,pinDict,pinValue,delay=3):
     logging.debug("Powering %s on...",pinValue)
-    if(GPIO.input(pinDict[pinValue])== 0):
+    if(GPIO.input(pinDict[pinValue])== 0): #Only do something if it is currently off
         GPIO.output(pinDict[pinValue],GPIO.HIGH)
         #The sleep time of 1 works in IDLE, but not in the cmd line
         #Not sure reason, but possible execution speed is faster in cmd line
         time.sleep(delay)
 
-        #If not turning on T-Node disable the Wi-Fi
-        if(pinValue!="IO4"):
+        #If turning main board on disable Wi-Fi
+        if(pinValue="PRIPWR" or pinValue="SECPWR" or pinValue="BAKPWR"):
             #Turn off the Wi-Fi so it doesn't interfere on the RS-485 bus
             enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
             
@@ -1762,14 +1762,14 @@ def scaleValue(R1,R2):
     return ((R1+R2)/R2)
 
 #Test an individual sensor port's voltage
-def sensor12VSW(GPIO,pinDict,x2,mbRetries,spi,mbDictName,clearText,spiCh):
+def sensor12VSW(GPIO,pinDict,x2,mbRetries,spi0,mbDictName,clearText,spiCh):
     
     #Enable 12V SW
     if(enableDisable(x2,mbRetries,mbDictName,clearText,1)):
         #If successfully enabled check the output voltage
         logging.debug("Reading 12V %s Voltage...",clearText)
         scaling=scaleValue(27.4,10) #Determine voltage divider scaling value
-        analog = readAnalog(spi,spiCh,scaling) #Read SPI0 ch. 1
+        analog = readAnalog(spi0,spiCh,scaling) #Read SPI0 ch. 1
         logging.debug("The read voltage is %.3f\n",analog)
 
         #Check if voltage is in range and return the result
@@ -1818,7 +1818,7 @@ def splitInto16Bits(combined):
 #Test the 12V SEPIC
 def test12SEPIC(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 12V SEPIC
     if(enableDisable(x2,mbRetries,"12SEPIC_OF","12V SEPIC",1)== False):
@@ -1843,9 +1843,9 @@ def test12SEPIC(GPIO,pinDict,x2,mbRetries):
         return ["Fail-Reading the 12V SEPIC voltage was not successful",-999999]
 
 #Test 12V Sensor Switch
-def test12VSenSW(GPIO,pinDict,x2,mbRetries,spi):
+def test12VSenSW(GPIO,pinDict,x2,mbRetries,spi0):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 12V SEPIC
     if(enableDisable(x2,mbRetries,"12SEPIC_OF","12V SEPIC",1)== False):
@@ -1858,19 +1858,19 @@ def test12VSenSW(GPIO,pinDict,x2,mbRetries,spi):
     time.sleep(.1) #needed to let 12V SEPIC stabalize
 
     #Check switch port A
-    [sensorAStatus,sensorAVLevel]= sensor12VSW(GPIO,pinDict,x2,mbRetries,spi,"12V_A_OF","Port A",2)
+    [sensorAStatus,sensorAVLevel]= sensor12VSW(GPIO,pinDict,x2,mbRetries,spi0,"12V_A_OF","Port A",2)
     enableDisable(x2,mbRetries,"12V_A_OF","12V Sensor Port A",0)#Turn off after
 
     #Check switch port B
-    [sensorBStatus,sensorBVLevel]= sensor12VSW(GPIO,pinDict,x2,mbRetries,spi,"12V_B_OF","Port B",3)
+    [sensorBStatus,sensorBVLevel]= sensor12VSW(GPIO,pinDict,x2,mbRetries,spi0,"12V_B_OF","Port B",3)
     enableDisable(x2,mbRetries,"12V_B_OF","12V Sensor Port B",0)#Turn off after
 
     #Check switch port C
-    [sensorCStatus,sensorCVLevel]= sensor12VSW(GPIO,pinDict,x2,mbRetries,spi,"12V_C_OF","Port C",4)
+    [sensorCStatus,sensorCVLevel]= sensor12VSW(GPIO,pinDict,x2,mbRetries,spi0,"12V_C_OF","Port C",4)
     enableDisable(x2,mbRetries,"12V_C_OF","12V Sensor Port C",0)#Turn off after
 
     #Check switch port D
-    [sensorDStatus,sensorDVLevel]= sensor12VSW(GPIO,pinDict,x2,mbRetries,spi,"12V_D_OF","Port D",5)
+    [sensorDStatus,sensorDVLevel]= sensor12VSW(GPIO,pinDict,x2,mbRetries,spi0,"12V_D_OF","Port D",5)
     enableDisable(x2,mbRetries,"12V_D_OF","12V Sensor Port D",0)#Turn off after
 
     return [sensorAStatus,sensorAVLevel,
@@ -1881,7 +1881,7 @@ def test12VSenSW(GPIO,pinDict,x2,mbRetries,spi):
 #Test the 3.3V SEPIC
 def test33SEPIC(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 3.3V SEPIC
     if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1) == False):
@@ -1902,12 +1902,12 @@ def test33SEPIC(GPIO,pinDict,x2,mbRetries):
         return ["Fail-Reading the 3.3V SEPIC voltage was not successful",-999999]
 
 #Test the 3V LDO is functioning correctly
-def test3VLDO(GPIO,pinDict,x2,mbRetries,spi):   
+def test3VLDO(GPIO,pinDict,x2,mbRetries,spi0):   
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     logging.debug("\nReading 3V LDO Voltage...")
-    analog0 = readAnalog(spi,0) #Read SPI0 ch. 0
+    analog0 = readAnalog(spi0,0) #Read SPI0 ch. 0
     logging.debug("The read voltage is %.3f",analog0)
 
     #Check if voltage is in range and return the result
@@ -1916,9 +1916,9 @@ def test3VLDO(GPIO,pinDict,x2,mbRetries,spi):
     return[rangeCheck[1],analog0]
 
 #Test the 5V LDO is functioning correctly
-def test5VLDO(GPIO,pinDict,x2,mbRetries,spi):
+def test5VLDO(GPIO,pinDict,x2,mbRetries,spi0):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable 12V SEPIC
     if(enableDisable(x2,mbRetries,"12SEPIC_OF","12V SEPIC",1)== False):
@@ -1929,7 +1929,7 @@ def test5VLDO(GPIO,pinDict,x2,mbRetries,spi):
         #If successfully enabled check the output voltage
         logging.debug("\nReading 5V LDO Voltage...")
         scaling=scaleValue(6.04,10)
-        analog1 = readAnalog(spi,1,scaling) #Read SPI0 ch. 1
+        analog1 = readAnalog(spi0,1,scaling) #Read SPI0 ch. 1
         logging.debug("The read voltage is %.3f",analog1)
 
         #Check if voltage is in range and return the result
@@ -1946,7 +1946,7 @@ def test5VLDO(GPIO,pinDict,x2,mbRetries,spi):
 #Test the K64 LEDs turn on
 def testK64LEDs(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 3.3V SEPIC
     if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1) == False):
@@ -1989,7 +1989,7 @@ def testK64LEDs(GPIO,pinDict,x2,mbRetries):
 #Test the magnetic switches are working correctly
 def testMagSW(GPIO,pinDict,x2,mbRetries,modbusTimeout):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Set the Modbus timeout to 1 seconds to prevent failure since Wi-Fi is turned
     #on when the magnet wakeup is triggered and we don't have control over timeing
@@ -2010,7 +2010,7 @@ def testMagSW(GPIO,pinDict,x2,mbRetries,modbusTimeout):
 #Test pressure temperature and humidity chip
 def testpressTempHum(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 3.3V SEPIC
     if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1) == False):
@@ -2063,9 +2063,9 @@ def testpressTempHum(GPIO,pinDict,x2,mbRetries):
     return [sensorStatus,pressureStatus,pressureValue,temperatureStatus,temperatureValue,humidityStatus,humidityValue]
 
 #Test the priority power path out switch is working correctly
-def testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi):
+def testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi0):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
 
     #Enable Priority Power Out Switch
@@ -2073,8 +2073,8 @@ def testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi):
         #If successfully enabled check the output voltage
         logging.debug("\nReading Output Voltages...")
         scaling=scaleValue(82.5,10)#Voltage divider X factor
-        analog6 = readAnalog(spi,6,scaling) #Read SPI0 ch. 6
-        analog7 = readAnalog(spi,7,scaling) #Read SPI0 ch. 7
+        analog6 = readAnalog(spi0,6,scaling) #Read SPI0 ch. 6
+        analog7 = readAnalog(spi0,7,scaling) #Read SPI0 ch. 7
         logging.debug("The J7 board to board read voltage is %.3f",analog6)
         logging.debug("The J3 JST read voltage is %.3f\n",analog7)
 
@@ -2093,9 +2093,9 @@ def testPrioPwrOutSW(GPIO,pinDict,x2,mbRetries,spi):
 #Test the priority power path switch is working correctly
 def testPrioPwrPathSW(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO3",delay=3)#Enable the backup power input
-    powerOff(GPIO,pinDict,"IO1",delay=0)#Ensure Primary input is off
-    powerOff(GPIO,pinDict,"IO2",delay=0)#Ensure Secondary input is off
+    powerOn(x2,mbRetries,GPIO,pinDict,"BAKPWR",delay=3)#Enable the backup power input
+    powerOff(GPIO,pinDict,"PRIPWR",delay=0)#Ensure Primary input is off
+    powerOff(GPIO,pinDict,"SECPWR",delay=0)#Ensure Secondary input is off
 
     #Enable 3.3V SEPIC and set a flag on whether to test the valid lines
     validCheck = enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)
@@ -2105,13 +2105,13 @@ def testPrioPwrPathSW(GPIO,pinDict,x2,mbRetries):
     [bakStat,bakVoltage,bakValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"BakPwr_V",validCheck,0b100)
 
     ##Test secondary input
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO2",delay=1)#Enable secondary input
+    powerOn(x2,mbRetries,GPIO,pinDict,"SECPWR",delay=1)#Enable secondary input
     
     logging.debug("\nTesting the Secondary Input...\n")
     [secStat,secVoltage,secValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"SecPwr_V",validCheck,0b110)
 
     ##Test primary input
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1",delay=1)#Enable primary input
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR",delay=1)#Enable primary input
     
     logging.debug("\nTesting the Primary Input...\n")
     [priStat,priVoltage,priValid]=prioPwrChannelTest(GPIO,pinDict,x2,mbRetries,"PriPwr_V",validCheck,0b111)
@@ -2152,16 +2152,16 @@ def testPrioPwrPathSW(GPIO,pinDict,x2,mbRetries):
         PPP_DisValid=-999999
     
     #Disable secondary and backup inputs
-    powerOff(GPIO,pinDict,"IO2",delay=0)
-    powerOff(GPIO,pinDict,"IO3",delay=0)
+    powerOff(GPIO,pinDict,"SECPWR",delay=0)
+    powerOff(GPIO,pinDict,"BAKPWR",delay=0)
 
     return [bakStat,bakVoltage,bakValid,secStat,secVoltage,secValid,priStat,priVoltage,priValid,PPP_DisStatus,PPP_DisValid]
 
 
 #Test that the RS-485 and processor are functioning correctly
-def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
+def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries,powerIO="PRIPWR"):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,powerIO)
 
     #Read the current address
     logging.debug("\nReading address...")
@@ -2185,9 +2185,9 @@ def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
         #Cycle the power to confirm address is written to and can be read from EE
         logging.debug("\nTesting EE Chip")
         logging.debug("Power cycling to confirm EE works...")
-        powerOff(GPIO,pinDict,"IO1")
+        powerOff(GPIO,pinDict,"PRIPWR")
         logging.debug("Power off")
-        powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+        powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
         logging.debug("Power on\n")
 
         #Read address and confirm it is still 2 after the power cycle
@@ -2235,7 +2235,7 @@ def testProcEEAndRS485(GPIO,pinDict,x2,mbRetries):
 #Test RS-485 Passthrough
 def testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode20):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO4")
+    powerOn(x2,mbRetries,GPIO,pinDict,"TNODEPWR")
 
     logging.debug("Reading address from the RS-485 passthrough T-Node...")
     readResult = mbReadRetries(tnode20,Reg.mbReg["Add"][0],Reg.mbReg["Add"][1],retries=mbRetries)
@@ -2249,7 +2249,7 @@ def testRS485Passthrough(GPIO,pinDict,x2,mbRetries,tnode20):
 #Test RTC Battery Functionality
 def testRTC(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
   
     #Read the RTC Voltage
     logging.debug("Reading the RTC Voltage...")
@@ -2286,9 +2286,9 @@ def testRTC(GPIO,pinDict,x2,mbRetries):
 
             #Check if the board keeps time on a power cycle
             logging.debug("Cycling Power to board...")
-            powerOff(GPIO,pinDict,"IO1")
+            powerOff(GPIO,pinDict,"PRIPWR")
             logging.debug("Turning board back on and checking time is accurate")
-            powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+            powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
             #Read the boards current time
             logging.debug("\nReading Time from X2...")
@@ -2322,14 +2322,147 @@ def testRTC(GPIO,pinDict,x2,mbRetries):
 
     return [RTCVoltageRangeResult,RTCVoltageValueResult,timeDiffResult,timeDiff]
 
-#Test SD Card is working
-def testSDCard(GPIO,pinDict,x2,mbRetries):
-    logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
 
-    #Enable the 3.3V SEPIC
-    if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)==False):
-        return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999]
+
+
+
+
+
+
+
+
+
+
+def testRTU33VSEPIC(GPIO,pinDict,spi1):
+    logging.debug("Module Start")
+    powerOn(False,False,GPIO,pinDict,"RTUPWR")
+
+    #Read the 3.3V LDO voltage
+    logging.debug("\nReading 3.3V LDO Voltage...")
+    analog0 = readAnalog(spi1,0) #Read SPI1 ch. 0
+    logging.debug("The read voltage is %.3f",analog0)
+
+    #Check if voltage is in range and return the result
+    rangeCheck=valueRangeCheck(3.3,0.3,analog0)#Expected, tolerance, test input
+
+    return[rangeCheck[1],analog0]
+
+def testRTU33SysCur(GPIO,pinDict,rtu,mbRetries):
+    logging.debug("Module Start")
+    powerOn(False,False,GPIO,pinDict,"RTUPWR")
+
+    #Read system current
+    logging.debug("\nReading the 3.3V system current...")
+    readResult = mbReadFloatRetries(rtu,Reg.mbReg["RTU33SysCur"][0],Reg.mbReg["RTU33SysCur"][1],retries=mbRetries)
+    if(readResult):
+        curr=readResult[0]
+        currentLevel=valueRangeCheck(20,7,curr) #Expected, tolerance, test input
+    else:
+        logging.debug("The read was not successful")
+        return ["Fail-The Modbus read failed",-999999]
+
+    return [currentLevel[1],curr]
+
+def testRTU5VSEPIC(GPIO,pinDict,spi1):
+    logging.debug("Module Start")
+    powerOn(False,False,GPIO,pinDict,"RTUPWR")
+
+    #Read the 5V SEPIC voltage
+    logging.debug("\nReading 5V SEPIC Voltage...")
+    analog1 = readAnalog(spi1,1) #Read SPI1 ch. 1
+    logging.debug("The read voltage is %.3f",analog1)
+
+    #Check if voltage is in range and return the result
+    rangeCheck=valueRangeCheck(5.0,0.5,analog1)#Expected, tolerance, test input
+
+    return[rangeCheck[1],analog1]
+
+def testRTU5VSysCur(GPIO,pinDict,rtu,mbRetries):
+    logging.debug("Module Start")
+    powerOn(False,False,GPIO,pinDict,"RTUPWR")
+
+    #Read system current
+    logging.debug("\nReading the 5V system current...")
+    readResult = mbReadFloatRetries(rtu,Reg.mbReg["RTU50SysCur"][0],Reg.mbReg["RTU50SysCur"][1],retries=mbRetries)
+    if(readResult):
+        curr=readResult[0]
+        currentLevel=valueRangeCheck(20,7,curr) #Expected, tolerance, test input
+    else:
+        logging.debug("The read was not successful")
+        return ["Fail-The Modbus read failed",-999999]
+
+    return [currentLevel[1],curr]
+
+def testRTUEthernet(GPIO,pinDict,rtu,mbRetries,spi1):
+    logging.debug("Module Start")
+    powerOn(False,False,GPIO,pinDict,"RTUPWR")
+
+    #Enable the Ethernet Switch
+    if(enableDisable(rtu,mbRetries,"EthPwr_OF","Ethernet Switch",1) == False):
+        return ["Fail-Enabling the Ethernet switch was not successful",-999999]
+
+    #Read the Ethernet voltage
+    logging.debug("\nReading Ethernet Voltage...")
+    analog4 = readAnalog(spi1,4) #Read SPI1 ch. 4
+    logging.debug("The read voltage is %.3f",analog4)
+
+    #Check if voltage is in range and return the result
+    rangeCheck=valueRangeCheck(3.3,0.2,analog4)#Expected, tolerance, test input
+
+    return[rangeCheck[1],analog4]
+
+def testRTUSWD(GPIO,pinDict):
+    logging.debug("Module Start")
+    
+##    logging.debug("Powering SW.D Input IO on...")
+##    if(GPIO.input(pinDict[pinValue])== 0): #Only do something if it is currently off
+##        GPIO.output(pinDict[pinValue],GPIO.HIGH)
+##        #The sleep time of 1 works in IDLE, but not in the cmd line
+##        #Not sure reason, but possible execution speed is faster in cmd line
+##        time.sleep(delay)
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Test SD Card is working
+def testSDCard(GPIO,pinDict,x2,mbRetries,mainPCB=True):
+    logging.debug("Module Start")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
+
+    #If it is the main PCB enable the 3.3V SEPIC
+    if(mainPCB):
+        #Enable the 3.3V SEPIC
+        if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)==False):
+            return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999]
 
     #Read the SD Card Status
     [statusValue,statusResult]=checkStatus(x2,mbRetries,"SDTest","SD card")
@@ -2339,7 +2472,7 @@ def testSDCard(GPIO,pinDict,x2,mbRetries):
 #Test that the system current is reading correctly
 def testSenCur(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 12V SEPIC
     if(enableDisable(x2,mbRetries,"12SEPIC_OF","12V SEPIC",1)== False):
@@ -2367,7 +2500,7 @@ def testSenCur(GPIO,pinDict,x2,mbRetries):
 #Test Sensor Ports
 def testSensor(GPIO,pinDict,x2,mbRetries,modbusTimeout):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 3.3V SEPIC
     if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)==False):
@@ -2447,7 +2580,7 @@ def testSerialFlash(GPIO,pinDict,x2,mbRetries):
 #Test that the system current is reading correctly
 def testSysCur(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 3.3V SEPIC
     if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)== False):
@@ -2468,7 +2601,7 @@ def testSysCur(GPIO,pinDict,x2,mbRetries):
 #Test trigger lines
 def testTriggers(GPIO,pinDict,x2,mbRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 3.3V SEPIC
     if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)== False):
@@ -2486,7 +2619,7 @@ def testTriggers(GPIO,pinDict,x2,mbRetries):
 #Test the Wi-Fi module is operating correctly
 def testWifi(GPIO,pinDict,x2,mbRetries,wifiNetwork,wifiRetries):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"IO1")
+    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
 
     #Enable the 3.3V SEPIC
     if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)== False):
