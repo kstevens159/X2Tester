@@ -65,10 +65,15 @@ mbReg={ "Add"               :[0x1000,              1,                  4       ]
         ,"K64LED"           :[0x7525,              1,                  16      ]#Reg1: 0=off; 1=on
         ,"Trigger1_OF"      :[0x7509,              1,                  16      ]#Reg1: 0=off; 1=on
         ,"Trigger2_OF"      :[0x750A,              1,                  16      ]#Reg1: 0=off; 1=on
-        ,"RTU50SysCur"      :[0x1000,              1,                  4       ]
-        ,"RTU33SysCur"      :[0x1000,              1,                  4       ]
-        ,"EthPwr_OF"        :[0x1000,              1,                  4       ]
-        ,"ReadTrigger1"     :[0x1000,              1,                  4       ]
+
+        ,"RTU50SysCur"      :[0x1000,              2,                  4       ]
+        ,"RTU5_V"           :[0x1000,              2,                  4       ]
+        ,"RTU33SysCur"      :[0x1000,              2,                  4       ]
+        ,"RTU33_V"          :[0x1000,              2,                  4       ]
+        ,"RTURTCBAT_V"      :[0x1000,              2,                  4       ]
+        ,"EthPwr_OF"        :[0x1000,              1,                  16      ]
+        ,"RTUPRIPWR_V"      :[0x1000,              2,                  4       ]
+        ,"ReadTrigger"      :[0x1000,              1,                  4       ]
        }
 #To get the register number
 #mbReg["KEY"][0]

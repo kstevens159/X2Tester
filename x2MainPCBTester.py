@@ -922,8 +922,8 @@ def mainRTU():
 
         #USB RS-485 Parameters
         x2RTUmbAddress = 253 #X2 RTU universal address
-        tnode20mbAddress = 20
-        tnode30mbAddress = 30
+        tnode20mbAddress = 30
+        tnode30mbAddress = 40
         baud = 19200
         parity = 'N'
         bytesize=8
@@ -949,23 +949,23 @@ def mainRTU():
         minimalmodbus._checkSlaveaddress = _checkSlaveaddress #call this function to adjust the modbus address range to 0-255
 ##        rtu.debug=True
 
-        #Setup the modbus instance of the Passthrough T-Node 1 (Address 20)
-        tnode20 = minimalmodbus.Instrument(comPort, tnode20mbAddress)#Define the minimalmodbus instance
-        tnode20.serial.baudrate = baud
-        tnode20.serial.parity = parity
-        tnode20.serial.bytesize = bytesize
-        tnode20.serial.stopbits = stopbits
-        tnode20.serial.timeout = modbusTimeout
-##        tnode20.debug=True
-
-        #Setup the modbus instance of the Passthrough T-Node 2 (Address 30)
-        tnode30 = minimalmodbus.Instrument(comPort, tnode30mbAddress)#Define the minimalmodbus instance
+        #Setup the modbus instance of the Passthrough T-Node 1 (Address 30)
+        tnode30 = minimalmodbus.Instrument(comPort, tnode20mbAddress)#Define the minimalmodbus instance
         tnode30.serial.baudrate = baud
         tnode30.serial.parity = parity
         tnode30.serial.bytesize = bytesize
         tnode30.serial.stopbits = stopbits
         tnode30.serial.timeout = modbusTimeout
 ##        tnode30.debug=True
+
+        #Setup the modbus instance of the Passthrough T-Node 2 (Address 40)
+        tnode40 = minimalmodbus.Instrument(comPort, tnode30mbAddress)#Define the minimalmodbus instance
+        tnode40.serial.baudrate = baud
+        tnode40.serial.parity = parity
+        tnode40.serial.bytesize = bytesize
+        tnode40.serial.stopbits = stopbits
+        tnode40.serial.timeout = modbusTimeout
+##        tnode40.debug=True
 
         ##Define GPIO Interface
         GPIO.setmode(GPIO.BOARD) #Sets the pin mode to use the board's pin numbers
@@ -974,7 +974,7 @@ def mainRTU():
         pinDict = {"RTUPWR"     :   29,
                    "TNODE1"     :   31,
                    "TNODE2"     :   33,
-                   "TRIGGER1"   :   36,
+                   "TRIGGER"    :   36,
                    "SWDi"       :   38,
                    "SWDo"       :   40
                   }
@@ -982,7 +982,7 @@ def mainRTU():
         GPIO.setup(pinDict["RTUPWR"], GPIO.OUT)
         GPIO.setup(pinDict["TNODE1"], GPIO.OUT)
         GPIO.setup(pinDict["TNODE2"], GPIO.OUT)
-        GPIO.setup(pinDict["TRIGGER1"], GPIO.OUT)
+        GPIO.setup(pinDict["TRIGGER"], GPIO.OUT)
         GPIO.setup(pinDict["SWDi"], GPIO.OUT)
         GPIO.setup(pinDict["SWDo"], GPIO.IN)
 
@@ -1004,10 +1004,14 @@ def mainRTU():
         else:                           #If the file doesn't exist create it and add section headers
             out_records=open(filename, 'w')
             out_records.write("Serial Number,"
-                              "5V SEPIC Status,"
-                              "5V SEPIC Voltage,"
-                              "3.3V LDO Status,"
-                              "3.3V LDO Voltage,"
+                              "5V SEPIC External Status,"
+                              "5V SEPIC External Voltage,"
+                              "5V SEPIC RTU PCB Status,"
+                              "5V SEPIC RTU PCB Voltage,"
+                              "3.3V LDO External Status,"
+                              "3.3V LDO External Voltage,"
+                              "3.3V LDO RTU PCB Status,"
+                              "3.3V LDO RTU PCB Voltage,"
                               "Processor & Host RS-485 Status,"
                               "EE Chip Status,"
                               "5V System Current Status,"
@@ -1018,13 +1022,16 @@ def mainRTU():
                               "Ethernet Voltage,"
                               "SD Card Status,"
                               "12V SW.D Status,"
-                              "Switch Priority Power Status,"
+                              "Switch Priority Power J3 Status,"
                               "Switch Priority Power J3 Voltage,"
+                              "Switch Priority Power J4 Status,"
                               "Switch Priority Power J4 Voltage,"
+                              "Switch Priority Power RTU PCB Status,"
+                              "Switch Priority Power RTU PCB Voltage,"
                               "RS-485 Passthrough J3 Status,"
                               "RS-485 Passthrough J4 Status,"
                               "LEDs Status,"
-                              "Trigger 1 Status,"
+                              "Trigger Status,"
                               "Itteration Time,"
                               "\n")
 
@@ -1047,7 +1054,7 @@ def mainRTU():
                       "Mod9  - Switch Priority Power Line",
                       "Mod10 - RS-485 Passthrough",
                       "Mod11 - LEDs",
-                      "Mod12 - Triggers"]
+                      "Mod12 - Trigger"]
         moduleNumber=0 #Counter for which module is active
 
        
@@ -1074,23 +1081,25 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 1 - Testing the 5V SEPIC...")
-                result1=testRTU5VSEPIC(GPIO,pinDict,spi1) #Call the 5V SEPIC test module
+                result1=testRTU5VSEPIC(GPIO,pinDict,rtu,mbRetries,spi1) #Call the 5V SEPIC test module
                 print ("=====================")
                 logging.important("Test results:\n"
-                             "5V SEPIC Status: %s\n"
-                             ,result1[0])
+                             "5V SEPIC External Status: %s\n"
+                             "5V SEPIC RTU PCB Status: %s\n"
+                             ,result1[0],result1[2])
                 logging.info("Advanced test results:\n"
-                             "5V SEPIC Voltage: %.3f"
-                             ,result1[1])
-                out_records.write(",%s,%s" % (result1[0],result1[1])) #Write the result to the file
+                             "5V SEPIC External Voltage: %.3f\n"
+                             "5V SEPIC RTU PCB Voltage: %.3f"
+                             ,result1[1],result1[3])
+                out_records.write(",%s,%s,%s,%s" % (result1[0],result1[1],result1[2],result1[3])) #Write the result to the file
                 print("------------------------------\n")
                 #Clear flag if test passed
-                if(result1[0]=="Pass"):
+                if(result1[0]=="Pass" and result1[2]=="Pass"):
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
                 logging.important("Module 1 - 5V SEPIC Testing Skipped...")
-                out_records.write(",skipped,skipped") #Write the result to the file
+                out_records.write(",skipped,skipped,skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
 
@@ -1099,23 +1108,25 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 2 - Testing the 3.3V LDO...")
-                result2=testRTU33VLDO(GPIO,pinDict,spi1) #Call the 3.3V LDO test module
+                result2=testRTU33VLDO(GPIO,pinDict,rtu,mbRetries,spi1) #Call the 3.3V LDO test module
                 print ("=====================")
                 logging.important("Test results:\n"
-                             "3.3V LDO Status: %s\n"
-                             ,result2[0])
+                             "3.3V LDO External Status: %s\n"
+                             "3.3V LDO RTU PCB Status: %s\n"
+                             ,result2[0],result2[2])
                 logging.info("Advanced test results:\n"
-                             "3.3V LDO Voltage: %.3f"
-                             ,result2[1])
-                out_records.write(",%s,%s" % (result2[0],result2[1])) #Write the result to the file
+                             "3.3V LDO External Voltage: %.3f\n"
+                             "3.3V LDO RTU PCB Voltage: %.3f"
+                             ,result2[1],result2[3])
+                out_records.write(",%s,%s,%s,%s" % (result2[0],result2[1],result2[2],result2[3])) #Write the result to the file
                 print("------------------------------\n")
                 #Clear flag if test passed
-                if(result2[0]=="Pass"):
+                if(result2[0]=="Pass" and result2[2]=="Pass"):
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
                 logging.important("Module 2 - 3.3V LDO Testing Skipped...")
-                out_records.write(",skipped,skipped") #Write the result to the file
+                out_records.write(",skipped,skipped,skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
 
@@ -1124,7 +1135,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 3 - Testing the Processor, EE, & RS-485 Modbus Communication...")
-                result3=testProcEEAndRS485(GPIO,pinDict,rtu,mbRetries,"RTUPWR") #Call the Processor and RS-485 test module
+                result3=testProcEEAndRS485(GPIO,pinDict,rtu,mbRetries,powerIO="RTUPWR") #Call the Processor and RS-485 test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "Processor & Host RS-485 Status: %s\n"
@@ -1222,7 +1233,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 7 - Testing the SD Card...")
-                result7=testSDCard(GPIO,pinDict,rtu,mbRetries,mainPCB=False) #Call the SD Card test module
+                result7=testSDCard(GPIO,pinDict,rtu,mbRetries,powerIO="RTUPWR") #Call the SD Card test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "SD Card Status: %s"
@@ -1266,24 +1277,27 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 9 - Testing the SW. Priority Power Line...")
-                result9=testRTUSWPrioPwr(GPIO,pinDict,spi1) #Call the SW. Prio. Pwr. test module
+                result9=testRTUSWPrioPwr(GPIO,pinDict,rtu,mbRetries,spi1) #Call the SW. Prio. Pwr. test module
                 print("=====================")
                 logging.important("Test result:\n"
-                             "SW. Priority Power Line Status: %s"
-                             ,result9[0])
+                             "SW. Priority Power Line J3 Status: %s\n"
+                             "SW. Priority Power Line J4 Status: %s\n"
+                             "SW. Priority Power Line RTU PCB Status: %s\n"
+                             ,result9[0],result9[2],result9[4])
                 logging.info("Advanced test results:\n"
                              "SW. Priority Power Line J3 Voltage: %.3f\n"
-                             "SW. Priority Power Line J4 Voltage: %.3f"
-                             ,result9[1],result9[2])
-                out_records.write(",%s,%s,%s" % (result9[0],result9[1],result9[2])) #Write the result to the file
+                             "SW. Priority Power Line J4 Voltage: %.3f\n"
+                             "SW. Priority Power Line RTU PCB Voltage: %.3f"
+                             ,result9[1],result9[3],result9[5])
+                out_records.write(",%s,%s,%s,%s,%s,%s" % (result9[0],result9[1],result9[2],result9[3],result9[4],result9[5])) #Write the result to the file
                 print("------------------------------\n")
                 #Clear flag if test passed
-                if(result9[0]=="Pass"):
+                if(result9[0]=="Pass" and result9[2]=="Pass" and result9[4]=="Pass"):
                     moduleToTest[moduleNumber]=0
             else:
                 print("\n------------------------------")
                 logging.important("Module 9 - SW. Prio. Pwr. Testing Skipped...")
-                out_records.write(",skipped,skipped,skipped") #Write the result to the file
+                out_records.write(",skipped,skipped,skipped,skipped,skipped,skipped") #Write the result to the file
                 print("------------------------------\n")
             moduleNumber += 1 #Increment the active module count
 
@@ -1292,7 +1306,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 10 - Testing the RS-485 Passthrough...")
-                result10=testRTUPassthrough(GPIO,pinDict,rtu,mbRetries,tnode20,tnode30) #Call the RS-485 passthrough test module
+                result10=testRTUPassthrough(GPIO,pinDict,rtu,mbRetries,tnode30,tnode40) #Call the RS-485 passthrough test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "Passthrough 1 Status: %s\n"
@@ -1315,7 +1329,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 11 - Testing the LEDs...")
-                result11=testRTULEDs(GPIO,pinDict,rtu,mbRetries) #Call the RTU LEDs test module
+                result11=testK64LEDs(GPIO,pinDict,rtu,mbRetries,powerIO="RTUPWR") #Call the RTU LEDs test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "LEDs Status: %s"
@@ -1337,7 +1351,7 @@ def mainRTU():
             if(moduleToTest[moduleNumber]):
                 print("\n------------------------------")
                 logging.important("Module 12 - Testing the Trigger Line...")
-                result12=testRTUTriggers(GPIO,pinDict,rtu,mbRetries) #Call the trigger line test module
+                result12=testRTUTrigger(GPIO,pinDict,rtu,mbRetries) #Call the trigger line test module
                 print("=====================")
                 logging.important("Test result:\n"
                              "Trigger Status: %s"
@@ -1689,7 +1703,7 @@ def powerOn(x2,mbRetries,GPIO,pinDict,pinValue,delay=3):
         time.sleep(delay)
 
         #If turning main board on disable Wi-Fi
-        if(pinValue="PRIPWR" or pinValue="SECPWR" or pinValue="BAKPWR"):
+        if(pinValue=="PRIPWR" or pinValue=="SECPWR" or pinValue=="BAKPWR"):
             #Turn off the Wi-Fi so it doesn't interfere on the RS-485 bus
             enableDisable(x2,mbRetries,"WiFiPwr_OF","Wi-Fi Module",0)
             
@@ -1944,15 +1958,16 @@ def test5VLDO(GPIO,pinDict,x2,mbRetries,spi0):
         return ["Fail-Enabling the 5V LDO was not successful",-999999]
 
 #Test the K64 LEDs turn on
-def testK64LEDs(GPIO,pinDict,x2,mbRetries):
+def testK64LEDs(GPIO,pinDict,x2,mbRetries,powerIO="PRIPWR"):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
+    powerOn(x2,mbRetries,GPIO,pinDict,powerIO)
 
-    #Enable the 3.3V SEPIC
-    if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1) == False):
-        return ["Fail-Enabling the 3.3V SEPIC was not successful"]
+    #Enable the 3.3V SEPIC if it is a Main PCB
+    if(powerIO=="PRIPWR"):
+        if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1) == False):
+            return ["Fail-Enabling the 3.3V SEPIC was not successful"]
 
-    #Enable the Wi-Fi LEDs
+    #Enable the K64 LEDs
     logging.debug("\nTesting the K64 LEDs...")
     writeResult1 = mbWriteRetries(x2,Reg.mbReg["K64LED"][0],[1],retries=mbRetries)#0 = LEDs on; 1 = LEDs off
     if(writeResult1):
@@ -2322,30 +2337,31 @@ def testRTC(GPIO,pinDict,x2,mbRetries):
 
     return [RTCVoltageRangeResult,RTCVoltageValueResult,timeDiffResult,timeDiff]
 
-
-
-
-
-
-
-
-
-
-
-
-def testRTU33VSEPIC(GPIO,pinDict,spi1):
+def testRTU33VLDO(GPIO,pinDict,rtu,mbRetries,spi1):
     logging.debug("Module Start")
     powerOn(False,False,GPIO,pinDict,"RTUPWR")
 
-    #Read the 3.3V LDO voltage
-    logging.debug("\nReading 3.3V LDO Voltage...")
+    #Read the 3.3V LDO voltage output externally
+    logging.debug("\nReading 3.3V LDO Voltage Externally...")
     analog0 = readAnalog(spi1,0) #Read SPI1 ch. 0
     logging.debug("The read voltage is %.3f",analog0)
 
     #Check if voltage is in range and return the result
-    rangeCheck=valueRangeCheck(3.3,0.3,analog0)#Expected, tolerance, test input
+    rangeCheck1=valueRangeCheck(3.3,0.3,analog0)#Expected, tolerance, test input
 
-    return[rangeCheck[1],analog0]
+    #Read the 3.3V LDO voltage from RTU
+    logging.debug("Reading 3.3V LDO Voltage on RTU PCB...")
+    readResult = mbReadFloatRetries(rtu,Reg.mbReg["RTU33_V"][0],Reg.mbReg["RTU33_V"][1],retries=mbRetries)
+    if(readResult):
+        logging.debug("The 3.3V LDO voltage level is %.3f\n",readResult[0])
+
+        #Check if voltage is in range and return the result
+        rangeCheck2=valueRangeCheck(3.3,0.3,readResult[0])#Expected, tolerance, test input
+    else:
+        readResult=[-999999]
+        rangeCheck2=["Fail-Voltage not read successfully"]
+
+    return[rangeCheck1[1],analog0,rangeCheck2[0],readResult[0]]
 
 def testRTU33SysCur(GPIO,pinDict,rtu,mbRetries):
     logging.debug("Module Start")
@@ -2363,19 +2379,31 @@ def testRTU33SysCur(GPIO,pinDict,rtu,mbRetries):
 
     return [currentLevel[1],curr]
 
-def testRTU5VSEPIC(GPIO,pinDict,spi1):
+def testRTU5VSEPIC(GPIO,pinDict,rtu,mbRetries,spi1):
     logging.debug("Module Start")
     powerOn(False,False,GPIO,pinDict,"RTUPWR")
 
     #Read the 5V SEPIC voltage
-    logging.debug("\nReading 5V SEPIC Voltage...")
+    logging.debug("\nReading 5V SEPIC Voltage Externally...")
     analog1 = readAnalog(spi1,1) #Read SPI1 ch. 1
     logging.debug("The read voltage is %.3f",analog1)
 
     #Check if voltage is in range and return the result
-    rangeCheck=valueRangeCheck(5.0,0.5,analog1)#Expected, tolerance, test input
+    rangeCheck1=valueRangeCheck(5.0,0.5,analog1)#Expected, tolerance, test input
 
-    return[rangeCheck[1],analog1]
+    #Read the 5V SEPIC voltage from RTU
+    logging.debug("Reading 5V SEPIC Voltage on RTU PCB...")
+    readResult = mbReadFloatRetries(rtu,Reg.mbReg["RTU5_V"][0],Reg.mbReg["RTU5_V"][1],retries=mbRetries)
+    if(readResult):
+        logging.debug("The 5V SEPIC voltage level is %.3f\n",readResult[0])
+
+        #Check if voltage is in range and return the result
+        rangeCheck2=valueRangeCheck(5,0.5,readResult[0])#Expected, tolerance, test input
+    else:
+        readResult=[-999999]
+        rangeCheck2=["Fail-Voltage not read successfully"]
+
+    return[rangeCheck1[1],analog1,rangeCheck2[0],readResult[0]]
 
 def testRTU5VSysCur(GPIO,pinDict,rtu,mbRetries):
     logging.debug("Module Start")
@@ -2411,55 +2439,107 @@ def testRTUEthernet(GPIO,pinDict,rtu,mbRetries,spi1):
 
     return[rangeCheck[1],analog4]
 
+def testRTUPassthrough(GPIO,pinDict,rtu,mbRetries,tnode30,tnode40):
+    logging.debug("Module Start")
+    powerOn(False,False,GPIO,pinDict,"RTUPWR")
+
+    #Test T-Node 1 responds on address 30
+    logging.debug("Reading address from the RS-485 passthrough T-Node 1...")
+    readResult = mbReadRetries(tnode30,Reg.mbReg["Add"][0],Reg.mbReg["Add"][1],retries=mbRetries)
+    if(readResult):
+        logging.debug("The RS-485 passthrough T-Node 1 was read successfully")
+        tnode1 = "Pass"
+    else:
+        logging.debug("The RS-485 passthrough T-Node 1 was not read successfully")
+        tnode1 = "Fail-T-Node 1 did not respond"
+
+    #Test T-Node 2 responds on address 40
+    logging.debug("Reading address from the RS-485 passthrough T-Node 2...")
+    readResult = mbReadRetries(tnode40,Reg.mbReg["Add"][0],Reg.mbReg["Add"][1],retries=mbRetries)
+    if(readResult):
+        logging.debug("The RS-485 passthrough T-Node 2 was read successfully")
+        tnode1 = "Pass"
+    else:
+        logging.debug("The RS-485 passthrough T-Node 2 was not read successfully")
+        tnode2 = "Fail-T-Node 2 did not respond"
+
+    return[tnode1,tnode2]
+
+def testRTUSWPrioPwr(GPIO,pinDict,rtu,mbRetries,spi1):
+    logging.debug("Module Start")
+    powerOn(False,False,GPIO,pinDict,"RTUPWR")
+
+    #Read the SW. PRIO. PWR. voltage on J3
+    logging.debug("\nReading Switch Priority Power Voltage Externally on J3...")
+    analog3 = readAnalog(spi1,3) #Read SPI1 ch. 3
+    logging.debug("The read voltage is %.3f",analog3)
+
+    #Check if voltage is in range and return the result
+    rangeCheck1=valueRangeCheck(12,0.5,analog3)#Expected, tolerance, test input
+
+
+    #Read the SW. PRIO. PWR. voltage on J4
+    logging.debug("\nReading Switch Priority Power Voltage Externally on J4...")
+    analog2 = readAnalog(spi1,2) #Read SPI1 ch. 2
+    logging.debug("The read voltage is %.3f",analog2)
+
+    #Check if voltage is in range and return the result
+    rangeCheck2=valueRangeCheck(12,0.5,analog2)#Expected, tolerance, test input
+
+
+    #Read the 5V SEPIC voltage from RTU
+    logging.debug("Reading Switch Priority Power Voltage on RTU PCB...")
+    readResult = mbReadFloatRetries(rtu,Reg.mbReg["RTUPRIPWR_V"][0],Reg.mbReg["RTUPRIPWR_V"][1],retries=mbRetries)
+    if(readResult):
+        logging.debug("The Switch Priority Power voltage level is %.3f\n",readResult[0])
+
+        #Check if voltage is in range and return the result
+        rangeCheck3=valueRangeCheck(12,0.5,readResult[0])#Expected, tolerance, test input
+    else:
+        readResult=[-999999]
+        rangeCheck3=["Fail-Reading voltage was not successful"]
+
+    return [rangeCheck1[0],analog3,rangeCheck2[0],analog2,rangeCheck3[0],readResult[0]]
+
 def testRTUSWD(GPIO,pinDict):
     logging.debug("Module Start")
+
+    #Set the RPi's output (RTU's input) pin high
+    logging.debug("Powering SW.D Input IO on...")
+    if(GPIO.input(pinDict["SWDi"])== 0): #Only do something if it is currently off
+        GPIO.output(pinDict["SWDi"],GPIO.HIGH)
+        time.sleep(0.1)
+
+    #Read the RPi's input (RTU's output) pin state
+    logging.debug("Checking SW.D Output IO...")
+    swDState = GPIO.input(pinDict["SWDo"])
+
+    #Check if the output state is correct
+    if(swDState == 1):
+        return["Pass"]
+    else:
+        return["Fail-Output state not valid"]
     
-##    logging.debug("Powering SW.D Input IO on...")
-##    if(GPIO.input(pinDict[pinValue])== 0): #Only do something if it is currently off
-##        GPIO.output(pinDict[pinValue],GPIO.HIGH)
-##        #The sleep time of 1 works in IDLE, but not in the cmd line
-##        #Not sure reason, but possible execution speed is faster in cmd line
-##        time.sleep(delay)
+def testRTUTrigger(GPIO,pinDict,rtu,mbRetries):
+    logging.debug("Module Start")
+    powerOn(False,False,GPIO,pinDict,"RTUPWR")
 
-    
+    #Set the RPi's trigger output high
+    if(GPIO.input(pinDict["TRIGGER"])== 0): #Only do something if it is currently off
+        GPIO.output(pinDict["TRIGGER"],GPIO.HIGH)
+        time.sleep(0.1)
 
+    [statusValue,statusResult]=checkStatus(rtu,mbRetries,"ReadTrigger","Trigger")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return[statusResult]
 
 #Test SD Card is working
-def testSDCard(GPIO,pinDict,x2,mbRetries,mainPCB=True):
+def testSDCard(GPIO,pinDict,x2,mbRetries,powerIO="PRIPWR"):
     logging.debug("Module Start")
-    powerOn(x2,mbRetries,GPIO,pinDict,"PRIPWR")
+    powerOn(x2,mbRetries,GPIO,pinDict,powerIO)
 
     #If it is the main PCB enable the 3.3V SEPIC
-    if(mainPCB):
+    if(powerIO=="PRIPWR"):
         #Enable the 3.3V SEPIC
         if(enableDisable(x2,mbRetries,"33SEPIC_OF","3.3V SEPIC",1)==False):
             return ["Fail-Enabling the 3.3V SEPIC was not successful",-999999]
